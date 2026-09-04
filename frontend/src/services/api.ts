@@ -6,7 +6,8 @@ import type {
   ResolveActionResponse,
   VerificationResponse,
   DatasetListResponse,
-  Dataset
+  Dataset,
+  CopilotResponse
 } from '../types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -173,3 +174,24 @@ export const updateAnnotations = async (
   const response = await api.patch(url, data);
   return response.data;
 };
+
+export const askCopilot = async (message: string, datasetId?: string): Promise<CopilotResponse> => {
+  const response = await api.post<CopilotResponse>('/api/copilot/chat', {
+    message,
+    dataset_id: datasetId || null,
+  });
+  return response.data;
+};
+
+export const explainCase = async (caseId: string): Promise<CopilotResponse> => {
+  const response = await api.post<CopilotResponse>(`/api/copilot/case/${caseId}`);
+  return response.data;
+};
+
+export const prioritizeCases = async (datasetId: string): Promise<CopilotResponse> => {
+  const response = await api.post<CopilotResponse>('/api/copilot/prioritize', {
+    dataset_id: datasetId,
+  });
+  return response.data;
+};
+

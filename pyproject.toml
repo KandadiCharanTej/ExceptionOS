@@ -13,7 +13,9 @@ dependencies = [
     "uvicorn",
     "pydantic",
     "python-multipart",
-    "sqlalchemy"
+    "sqlalchemy",
+    "openai",
+    "python-dotenv"
 ]
 license = { text = "MIT" }
 authors = [{ name = "Kandadi Charan Tej", email = "kandadicharantej21@gmail.com" }]

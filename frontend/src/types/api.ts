@@ -84,6 +84,8 @@ export interface MemoryCaseSchema {
   root_cause: string;
   root_cause_status: string;
   confidence_score: number;
+  resolutions?: any[];
+  verifications?: any[];
   resolution_action: string;
   verification_status: string;
   amount_difference: number | null;
@@ -91,6 +93,20 @@ export interface MemoryCaseSchema {
   missing_sources: string[];
   duplicate_flag: boolean;
   timestamp: string;
+}
+
+export interface CopilotSource {
+  type: string;
+  id: string;
+}
+
+export interface CopilotResponse {
+  answer: string;
+  verified_facts: string[];
+  recommendations: string[];
+  confidence: string;
+  sources: CopilotSource[];
+  disclaimer: string;
 }
 
 export interface SimilarityResultSchema {

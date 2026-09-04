@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from exceptionos.api.routes import health, reconcile, cases, datasets
+from exceptionos.api.routes import health, reconcile, cases, datasets, copilot
 from exceptionos.database import init_db
 
 # Initialize database
@@ -42,3 +42,4 @@ app.include_router(health.router)
 app.include_router(reconcile.router)
 app.include_router(cases.router)
 app.include_router(datasets.router)
+app.include_router(copilot.router)

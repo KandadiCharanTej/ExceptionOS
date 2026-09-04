@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, List, Activity, Settings, Database, Menu, X, ServerCrash, AlertTriangle } from 'lucide-react';
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { List, Activity, Settings, Database, Menu, X, ServerCrash, Home, Bot, AlertTriangle } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import Cases from './pages/Cases';
 import Investigation from './pages/Investigation';
 import Analytics from './pages/Analytics';
 import Datasets from './pages/Datasets';
+import Copilot from './pages/Copilot';
 import { healthCheck } from './services/api';
 
 export function cn(...inputs: ClassValue[]) {
@@ -50,15 +51,6 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: boolean) => void }) {
-  const location = useLocation();
-  
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Datasets', path: '/datasets', icon: Database },
-    { name: 'Cases', path: '/cases', icon: List },
-    { name: 'Analytics', path: '/analytics', icon: Activity },
-  ];
-
   return (
     <>
       {/* Mobile overlay */}
@@ -87,26 +79,31 @@ function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: bool
         </div>
         
         <div className="flex-1 py-6 flex flex-col gap-1 px-3">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path || 
-                            (item.path !== '/' && location.pathname.startsWith(item.path));
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
-                  isActive 
-                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20" 
-                    : "text-slate-400 hover:bg-[#1E293B]/50 hover:text-slate-200 border border-transparent"
-                )}
-              >
-                <item.icon className={cn("h-4 w-4 mr-3", isActive ? "text-blue-500" : "text-slate-500")} />
-                {item.name}
-              </Link>
-            );
-          })}
+          <NavLink to="/" end className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium", isActive ? "bg-blue-600/10 text-blue-400 shadow-[inset_2px_0_0_0_rgba(59,130,246,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
+            <Home className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
+            Dashboard
+          </NavLink>
+          
+          <NavLink to="/copilot" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-2", isActive ? "bg-indigo-600/10 text-indigo-400 shadow-[inset_2px_0_0_0_rgba(99,102,241,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
+            <Bot className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
+            AI Copilot
+          </NavLink>
+
+          <div className="pt-4 pb-2">
+            <p className="px-4 text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Reconciliation</p>
+            <NavLink to="/datasets" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium", isActive ? "bg-blue-600/10 text-blue-400" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
+              <Database className="h-5 w-5 mr-3" />
+              Datasets
+            </NavLink>
+            <NavLink to="/cases" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-1", isActive ? "bg-blue-600/10 text-blue-400" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
+              <List className="h-5 w-5 mr-3" />
+              Cases
+            </NavLink>
+            <NavLink to="/analytics" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-1", isActive ? "bg-blue-600/10 text-blue-400" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
+              <Activity className="h-5 w-5 mr-3" />
+              Analytics
+            </NavLink>
+          </div>
         </div>
         
         <div className="p-4 border-t border-[#1E293B] flex flex-col gap-2">
@@ -125,7 +122,6 @@ function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: bool
 }
 
 function Header({ toggleSidebar }: { toggleSidebar: () => void }) {
-  // Polling health endpoint every 15 seconds
   const { isError, isSuccess } = useQuery({
     queryKey: ['healthCheck'],
     queryFn: healthCheck,
@@ -240,6 +236,7 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/copilot" element={<Copilot />} />
           <Route path="/datasets" element={<Datasets />} />
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:caseId" element={<Investigation />} />

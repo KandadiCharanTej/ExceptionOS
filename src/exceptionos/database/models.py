@@ -75,3 +75,16 @@ class VerificationRecord(Base):
     verified_at = Column(DateTime, default=datetime.utcnow)
     
     case_record = relationship("CaseRecord", back_populates="verifications")
+
+class AIInteraction(Base):
+    __tablename__ = "ai_interactions"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    dataset_id = Column(String, nullable=True)
+    case_id = Column(String, nullable=True)
+    user_message = Column(String, nullable=False)
+    context_summary = Column(String, nullable=False)
+    ai_response = Column(JSON, nullable=False)
+    provider = Column(String, nullable=False)
+    model_name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, BrainCircuit, History, CheckCircle, Clock, 
-  AlertCircle, Activity, FileText, List, Shield, Lightbulb, Edit3, Tag, Save, Columns
+  AlertCircle, Activity, FileText, List, Shield, Lightbulb, Edit3, Tag, Save, Columns, Bot, Sparkles, ShieldCheck
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
 import { 
-  getCase, getCaseHistory, resolveCase, verifyResolution, updateAnnotations
+  getCase, getCaseHistory, resolveCase, verifyResolution, updateAnnotations, explainCase
 } from '../services/api';
 import type { 
   ResolveActionResponse, VerificationResponse 
@@ -21,6 +21,8 @@ export default function Investigation() {
   const [searchParams] = useSearchParams();
   const datasetId = searchParams.get('dataset_id') || undefined;
   const navigate = useNavigate();
+  const [explainModalOpen, setExplainModalOpen] = useState(false);
+
   const queryClient = useQueryClient();
   
   const [actionInput, setActionInput] = useState('');
@@ -39,7 +41,7 @@ export default function Investigation() {
     enabled: !!caseId,
   });
 
-  const { data: historyData, refetch: refetchHistory } = useQuery({
+  const { data: historyData, refetch: refetchHistory, isLoading: historyLoading } = useQuery({
     queryKey: ['caseHistory', caseId, datasetId],
     queryFn: () => getCaseHistory(caseId!, datasetId),
     enabled: !!caseId,
@@ -93,7 +95,16 @@ export default function Investigation() {
     onError: (err: any) => toast.error(err.message || 'Failed to save annotations')
   });
 
-  if (isLoading) {
+  const explainMutation = useMutation({
+    mutationFn: () => explainCase(caseId!),
+    onSuccess: () => {},
+    onError: (err: any) => {
+      toast.error(err.message || 'Failed to generate AI explanation');
+      setExplainModalOpen(false);
+    }
+  });
+
+  if (isLoading || historyLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)]">
         <Activity className="h-10 w-10 text-blue-500 animate-spin mb-4" />
@@ -151,7 +162,6 @@ export default function Investigation() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
-        {/* LEFT COLUMN: Timeline, Annotations, Audit */}
         <div className="xl:col-span-1 space-y-6">
           <Card className="bg-[#0A0F1C] border-[#1E293B]">
             <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B] flex flex-row items-center justify-between">
@@ -292,7 +302,6 @@ export default function Investigation() {
           </Card>
         </div>
 
-        {/* RIGHT COLUMN: Intelligence Core & 3-Way Comparison */}
         <div className="xl:col-span-2 space-y-6">
           <Card className="bg-[#0A0F1C] border-[#1E293B]">
             <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B]">
@@ -350,18 +359,84 @@ export default function Investigation() {
                   <BrainCircuit className="h-5 w-5 mr-2 text-blue-500" />
                   Deterministic Root Cause Analysis
                 </CardTitle>
-                <div className="flex items-center space-x-3 bg-[#0A0F1C] px-3 py-1 rounded-full border border-[#1E293B]">
-                  <span className="text-xs font-semibold text-slate-400">Confidence Match</span>
-                  <div className="flex items-center">
-                    <span className="text-sm font-bold text-blue-400 mr-2">{data.root_cause.confidence_score}%</span>
-                    <div className="w-16 h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" style={{ width: `${data.root_cause.confidence_score}%` }} />
+                <div className="flex items-center space-x-3">
+                  <div className="bg-[#0A0F1C] px-3 py-1 rounded-full border border-[#1E293B] flex items-center">
+                    <span className="text-xs font-semibold text-slate-400 mr-2">Confidence Match</span>
+                    <div className="flex items-center">
+                      <span className="text-sm font-bold text-blue-400 mr-2">{data.root_cause.confidence_score}%</span>
+                      <div className="w-16 h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" style={{ width: `${data.root_cause.confidence_score}%` }} />
+                      </div>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => {
+                      setExplainModalOpen(true);
+                      if (!explainMutation.data && !explainMutation.isPending) {
+                        explainMutation.mutate();
+                      }
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 rounded-full h-8 text-xs px-3 shadow-[0_0_10px_rgba(79,70,229,0.3)] cursor-pointer"
+                  >
+                    <Bot className="h-3 w-3" />
+                    Ask AI to Explain
+                  </button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-6">
+              {explainModalOpen && (
+                <div className="mb-8 p-5 rounded-xl bg-slate-900/80 border border-indigo-900/50 shadow-lg relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                  <div className="flex justify-between items-center mb-5 relative z-10">
+                    <h4 className="font-semibold text-indigo-400 flex items-center gap-2 text-sm tracking-wide uppercase">
+                      <Sparkles className="h-4 w-4" />
+                      AI Copilot Explanation
+                    </h4>
+                    <button onClick={() => setExplainModalOpen(false)} className="text-slate-500 hover:text-slate-300 transition-colors">
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {explainMutation.isPending ? (
+                    <div className="flex items-center gap-3 text-slate-400 py-6">
+                      <div className="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full" />
+                      <span className="text-sm">Analyzing deterministic evidence...</span>
+                    </div>
+                  ) : explainMutation.data ? (
+                    <div className="space-y-5 relative z-10">
+                      <div className="bg-slate-950/80 p-4 rounded-lg border border-slate-800">
+                        <h5 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4" /> Verified Facts
+                        </h5>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
+                          {explainMutation.data.verified_facts.map((f, i) => <li key={i}>{f}</li>)}
+                        </ul>
+                      </div>
+                      
+                      <div className="px-2">
+                        <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                          {explainMutation.data.answer}
+                        </p>
+                      </div>
+                      
+                      {explainMutation.data.recommendations.length > 0 && (
+                        <div className="bg-indigo-950/20 p-4 rounded-lg border border-indigo-900/30">
+                          <h5 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <Activity className="h-4 w-4" />
+                            Recommendations
+                          </h5>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
+                            {explainMutation.data.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-red-400 text-sm py-4">Explanation failed to generate.</div>
+                  )}
+                </div>
+              )}
               <div className="mb-8">
                 <h3 className="text-2xl font-bold text-white capitalize mb-3 tracking-tight">
                   {data.root_cause.cause ? data.root_cause.cause.replace(/_/g, ' ') : 'No Exception'}

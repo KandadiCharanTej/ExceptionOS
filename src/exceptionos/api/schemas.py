@@ -29,16 +29,20 @@ class DatasetListResponse(BaseModel):
 class CaseSummarySchema(BaseModel):
     case_id: str
     classification: str
-    root_cause: Optional[str]
-    status: Optional[str]
-    confidence_score: Optional[int]
-    requires_human_review: Optional[bool]
+    root_cause: Optional[str] = None
+    status: Optional[str] = None
+    confidence_score: Optional[int] = None
+    requires_human_review: Optional[bool] = None
+    analyst_classification: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
 
 class CaseListResponse(BaseModel):
+    items: List[CaseSummarySchema]
     total: int
     page: int
     limit: int
-    cases: List[CaseSummarySchema]
+    total_pages: int
 
 class TransactionSchema(BaseModel):
     source: str
@@ -63,7 +67,7 @@ class HypothesisSchema(BaseModel):
     explanation: str
 
 class RootCauseDecisionSchema(BaseModel):
-    cause: Optional[str]
+    cause: Optional[str] = None
     status: str
     confidence_score: int
     supporting_evidence: List[str]
@@ -83,8 +87,8 @@ class MemoryCaseSchema(BaseModel):
     confidence_score: int
     resolution_action: str
     verification_status: str
-    amount_difference: Optional[float]
-    date_difference: Optional[int]
+    amount_difference: Optional[float] = None
+    date_difference: Optional[int] = None
     missing_sources: List[str]
     duplicate_flag: bool
     timestamp: str
@@ -97,6 +101,9 @@ class SimilarityResultSchema(BaseModel):
 class InvestigationResponse(BaseModel):
     case_id: str
     classification: str
+    analyst_classification: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
     transactions: Dict[str, Optional[TransactionSchema]]
     timeline: List[TimelineEventSchema]
     hypotheses: List[HypothesisSchema]
@@ -120,3 +127,23 @@ class VerificationResponse(BaseModel):
     case_id: str
     status: str
     explanation: str
+
+class CaseUpdateRequest(BaseModel):
+    analyst_classification: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+class CaseAnnotationResponse(BaseModel):
+    case_id: str
+    analyst_classification: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+    message: str
+
+class BulkDeleteRequest(BaseModel):
+    case_ids: List[str]
+    dataset_id: Optional[str] = None
+
+class BulkDeleteResponse(BaseModel):
+    deleted_count: int
+    message: str

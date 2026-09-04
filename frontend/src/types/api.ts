@@ -34,7 +34,8 @@ export interface CaseListResponse {
   total: number;
   page: number;
   limit: number;
-  cases: CaseSummarySchema[];
+  total_pages: number;
+  items: CaseSummarySchema[];
 }
 
 export interface TransactionSchema {
@@ -101,6 +102,9 @@ export interface SimilarityResultSchema {
 export interface InvestigationResponse {
   case_id: string;
   classification: string;
+  analyst_classification?: string;
+  notes?: string;
+  tags?: string[];
   transactions: {
     ledger: TransactionSchema | null;
     gateway: TransactionSchema | null;

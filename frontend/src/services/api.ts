@@ -70,18 +70,52 @@ export const getDataset = async (datasetId: string): Promise<Dataset> => {
   return response.data;
 };
 
-export const getCases = async (page = 1, limit = 50, classification?: string, datasetId?: string): Promise<CaseListResponse> => {
+export const deleteDataset = async (datasetId: string): Promise<void> => {
+  await api.delete(`/api/datasets/${datasetId}`);
+};
+
+export const getCases = async (
+  page = 1, 
+  limit = 20, 
+  classification?: string, 
+  datasetId?: string,
+  search?: string,
+  status?: string,
+  sort_by?: string,
+  sort_order?: string
+): Promise<CaseListResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
   });
-  if (classification) {
-    params.append('classification', classification);
-  }
-  if (datasetId) {
-    params.append('dataset_id', datasetId);
-  }
+  if (classification) params.append('classification', classification);
+  if (datasetId) params.append('dataset_id', datasetId);
+  if (search) params.append('search', search);
+  if (status) params.append('status', status);
+  if (sort_by) params.append('sort_by', sort_by);
+  if (sort_order) params.append('sort_order', sort_order);
+  
   const response = await api.get<CaseListResponse>(`/api/cases?${params.toString()}`);
+  return response.data;
+};
+
+export const exportCases = async (format: 'csv' | 'json', datasetId?: string, classification?: string, search?: string) => {
+  const params = new URLSearchParams({ format });
+  if (datasetId) params.append('dataset_id', datasetId);
+  if (classification) params.append('classification', classification);
+  if (search) params.append('search', search);
+  
+  const response = await api.get(`/api/cases/export?${params.toString()}`, {
+    responseType: 'blob'
+  });
+  return response.data;
+};
+
+export const bulkDeleteCases = async (caseIds: string[], datasetId?: string) => {
+  const response = await api.post('/api/cases/bulk-delete', {
+    case_ids: caseIds,
+    dataset_id: datasetId
+  });
   return response.data;
 };
 
@@ -125,5 +159,17 @@ export const verifyResolution = async (caseId: string, datasetId?: string): Prom
   }
   const url = datasetId ? `/api/cases/${caseId}/verify?${params.toString()}` : `/api/cases/${caseId}/verify`;
   const response = await api.post<VerificationResponse>(url);
+  return response.data;
+};
+
+export const updateAnnotations = async (
+  caseId: string, 
+  data: { analyst_classification?: string, notes?: string, tags?: string[] },
+  datasetId?: string
+) => {
+  const params = new URLSearchParams();
+  if (datasetId) params.append('dataset_id', datasetId);
+  const url = datasetId ? `/api/cases/${caseId}/annotations?${params.toString()}` : `/api/cases/${caseId}/annotations`;
+  const response = await api.patch(url, data);
   return response.data;
 };

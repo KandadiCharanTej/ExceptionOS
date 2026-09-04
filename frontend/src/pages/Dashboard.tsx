@@ -1,17 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Activity, CheckCircle, AlertTriangle, Database, UploadCloud, X, FileText, ChevronRight } from 'lucide-react';
-import { uploadReconciliationFiles, getDatasets } from '../services/api';
-import type { Dataset } from '../types/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+
+import { uploadReconciliationFiles, getDatasets, getCases } from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle, Badge } from '../components/ui';
 import { cn } from '../App';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const [recentDatasets, setRecentDatasets] = useState<Dataset[]>([]);
+  const queryClient = useQueryClient();
   
   const [ledgerFile, setLedgerFile] = useState<File | null>(null);
   const [gatewayFile, setGatewayFile] = useState<File | null>(null);
@@ -21,40 +20,43 @@ export default function Dashboard() {
   const gatewayRef = useRef<HTMLInputElement>(null);
   const bankRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  const { data: datasetsData, isLoading: isLoadingDatasets } = useQuery({
+    queryKey: ['datasets'],
+    queryFn: getDatasets,
+  });
 
-  const loadDashboardData = async () => {
-    try {
-      const res = await getDatasets();
-      setRecentDatasets(res.datasets.slice(0, 5));
-    } catch (err) {
-      console.error("Failed to load datasets for dashboard", err);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!ledgerFile || !gatewayFile || !bankFile) {
-      setError('Please provide all three CSV files (Ledger, Gateway, Bank).');
-      return;
-    }
-    
-    setLoading(true);
-    setError('');
-    try {
-      await uploadReconciliationFiles(ledgerFile, gatewayFile, bankFile);
-      navigate(`/datasets`);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Failed to process uploaded files');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const recentDatasets = datasetsData?.datasets.slice(0, 5) || [];
   const activeDataset = recentDatasets[0];
 
-  // For a real implementation, we'd fetch the classification counts, but for now we'll skip the chart if data is not available.
+  const { data: exceptionsData, isLoading: isLoadingExceptions } = useQuery({
+    queryKey: ['cases', activeDataset?.id, 'exceptions'],
+    queryFn: () => getCases(1, 5, undefined, activeDataset.id),
+    enabled: !!activeDataset,
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: (files: { ledger: File, gateway: File, bank: File }) => 
+      uploadReconciliationFiles(files.ledger, files.gateway, files.bank),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['datasets'] });
+      toast.success('Reconciliation completed successfully');
+      setLedgerFile(null);
+      setGatewayFile(null);
+      setBankFile(null);
+      navigate('/datasets');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || error.message || 'Failed to process files');
+    }
+  });
+
+  const handleUpload = () => {
+    if (!ledgerFile || !gatewayFile || !bankFile) {
+      toast.error('Please provide all three CSV files (Ledger, Gateway, Bank).');
+      return;
+    }
+    uploadMutation.mutate({ ledger: ledgerFile, gateway: gatewayFile, bank: bankFile });
+  };
 
   const FileSelector = ({ 
     label, 
@@ -69,7 +71,7 @@ export default function Dashboard() {
   }) => (
     <div className={cn(
       "flex flex-col space-y-2 p-4 rounded-lg border border-dashed transition-all duration-200",
-      file ? "bg-emerald-500/5 border-emerald-500/30" : "bg-slate-900/30 border-slate-700 hover:border-slate-600"
+      file ? "bg-emerald-500/5 border-emerald-500/30" : "bg-[#0A0F1C] border-[#1E293B] hover:border-slate-600"
     )}>
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-slate-300">{label} CSV</span>
@@ -78,7 +80,7 @@ export default function Dashboard() {
       <div className="flex items-center mt-2">
         <button
           onClick={() => inputRef.current?.click()}
-          className="px-3 py-1.5 bg-[#1E293B] border border-slate-700 rounded text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors shadow-sm"
+          className="px-3 py-1.5 bg-[#1E293B] border border-slate-700 rounded text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
         >
           {file ? 'Change File' : 'Choose File'}
         </button>
@@ -87,7 +89,7 @@ export default function Dashboard() {
             <span className="flex items-center text-emerald-400 font-medium">
               <FileText className="w-4 h-4 mr-1" />
               {file.name}
-              <button onClick={() => setFile(null)} className="ml-2 text-slate-500 hover:text-red-400">
+              <button onClick={() => setFile(null)} className="ml-2 text-slate-500 hover:text-red-400 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </span>
@@ -123,7 +125,9 @@ export default function Dashboard() {
               <h3 className="tracking-tight text-sm font-medium text-slate-400">Total Transactions</h3>
               <Database className="h-4 w-4 text-blue-500" />
             </div>
-            <div className="text-3xl font-bold text-white">{activeDataset ? activeDataset.total_cases : '-'}</div>
+            <div className="text-3xl font-bold text-white">
+              {isLoadingDatasets ? <Activity className="h-6 w-6 animate-spin text-slate-600" /> : (activeDataset?.total_cases || '-')}
+            </div>
             <p className="text-xs text-slate-500 mt-1 flex items-center">
               <span className="text-emerald-400 mr-1">↑</span> Latest Dataset
             </p>
@@ -136,9 +140,13 @@ export default function Dashboard() {
               <h3 className="tracking-tight text-sm font-medium text-slate-400">Perfect Matches</h3>
               <CheckCircle className="h-4 w-4 text-emerald-500" />
             </div>
-            <div className="text-3xl font-bold text-white">{activeDataset ? activeDataset.matched_cases : '-'}</div>
+            <div className="text-3xl font-bold text-white">
+              {isLoadingDatasets ? <Activity className="h-6 w-6 animate-spin text-slate-600" /> : (activeDataset?.matched_cases || '-')}
+            </div>
             <p className="text-xs text-slate-500 mt-1">
-              {activeDataset ? `${((activeDataset.matched_cases / activeDataset.total_cases) * 100).toFixed(1)}%` : '-'}
+              {activeDataset && activeDataset.total_cases > 0 
+                ? `${((activeDataset.matched_cases / activeDataset.total_cases) * 100).toFixed(1)}%` 
+                : '-'}
             </p>
           </CardContent>
         </Card>
@@ -149,7 +157,9 @@ export default function Dashboard() {
               <h3 className="tracking-tight text-sm font-medium text-slate-400">Exceptions</h3>
               <AlertTriangle className="h-4 w-4 text-red-500" />
             </div>
-            <div className="text-3xl font-bold text-red-500">{activeDataset ? activeDataset.exception_count : '-'}</div>
+            <div className="text-3xl font-bold text-red-500">
+              {isLoadingDatasets ? <Activity className="h-6 w-6 animate-spin text-red-900/50" /> : (activeDataset?.exception_count || '-')}
+            </div>
             <p className="text-xs text-slate-500 mt-1 text-red-400/70">Requires Investigation</p>
           </CardContent>
         </Card>
@@ -165,13 +175,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {error && (
-        <div className="bg-red-500/10 text-red-400 p-4 rounded-md border border-red-500/20 font-medium flex items-center shadow-lg">
-          <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0" />
-          {error}
-        </div>
-      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Reconciliation Action Panel */}
@@ -193,10 +196,10 @@ export default function Dashboard() {
 
             <button
               onClick={handleUpload}
-              disabled={loading || !ledgerFile || !gatewayFile || !bankFile}
-              className="w-full inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-blue-600 text-white hover:bg-blue-500 h-12 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+              disabled={uploadMutation.isPending || !ledgerFile || !gatewayFile || !bankFile}
+              className="w-full cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-blue-600 text-white hover:bg-blue-500 h-12 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(37,99,235,0.3)]"
             >
-              {loading ? (
+              {uploadMutation.isPending ? (
                 <><Activity className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
               ) : (
                 <><Play className="mr-2 h-5 w-5" /> Run Reconciliation</>
@@ -210,7 +213,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle>Recent Datasets</CardTitle>
-              <button onClick={() => navigate('/datasets')} className="text-sm text-blue-400 hover:text-blue-300 flex items-center">
+              <button onClick={() => navigate('/datasets')} className="text-sm text-blue-400 hover:text-blue-300 flex items-center cursor-pointer">
                 View All <ChevronRight className="h-4 w-4 ml-1" />
               </button>
             </CardHeader>
@@ -225,14 +228,22 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentDatasets.map(ds => (
-                      <tr key={ds.id} className="border-b border-[#1E293B] hover:bg-[#1E293B]/30 cursor-pointer" onClick={() => navigate(`/cases?dataset_id=${ds.id}`)}>
-                        <td className="px-6 py-4 font-medium text-white">{ds.name}</td>
-                        <td className="px-6 py-4 text-right">{ds.total_cases}</td>
-                        <td className="px-6 py-4 text-right text-red-400">{ds.exception_count}</td>
+                    {isLoadingDatasets ? (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-8 text-center text-slate-500">
+                          <Activity className="h-5 w-5 animate-spin mx-auto mb-2" />
+                          Loading...
+                        </td>
                       </tr>
-                    ))}
-                    {recentDatasets.length === 0 && (
+                    ) : recentDatasets.length > 0 ? (
+                      recentDatasets.map(ds => (
+                        <tr key={ds.id} className="border-b border-[#1E293B] hover:bg-[#1E293B]/30 cursor-pointer" onClick={() => navigate(`/cases?dataset_id=${ds.id}`)}>
+                          <td className="px-6 py-4 font-medium text-white">{ds.name}</td>
+                          <td className="px-6 py-4 text-right">{ds.total_cases}</td>
+                          <td className="px-6 py-4 text-right text-red-400">{ds.exception_count}</td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
                         <td colSpan={3} className="px-6 py-8 text-center text-slate-500">No datasets found. Run reconciliation to get started.</td>
                       </tr>
@@ -253,19 +264,33 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="p-4 border-b border-[#1E293B] hover:bg-[#1E293B]/30 flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/cases?dataset_id=${activeDataset.id}`)}>
-                  <div>
-                    <div className="text-sm font-bold text-slate-200 mb-1">TXN-42-00021</div>
-                    <div className="flex items-center text-xs">
-                      <Badge variant="error" className="mr-2">Amount Mismatch</Badge>
-                      <span className="text-slate-400">Confidence: 98%</span>
-                    </div>
+                {isLoadingExceptions ? (
+                  <div className="p-8 text-center text-slate-500">
+                    <Activity className="h-5 w-5 animate-spin mx-auto mb-2" />
+                    Loading exceptions...
                   </div>
-                  <ChevronRight className="h-5 w-5 text-slate-600 group-hover:text-blue-400 transition-colors" />
-                </div>
+                ) : exceptionsData?.items.filter(c => c.classification !== 'matched').slice(0, 3).map(c => (
+                  <div key={c.case_id} className="p-4 border-b border-[#1E293B] hover:bg-[#1E293B]/30 flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/cases/${c.case_id}?dataset_id=${activeDataset.id}`)}>
+                    <div>
+                      <div className="text-sm font-bold text-slate-200 mb-1">{c.case_id}</div>
+                      <div className="flex items-center text-xs">
+                        <Badge variant="error" className="mr-2">{c.classification.replace('_', ' ')}</Badge>
+                        {c.confidence_score !== null && <span className="text-slate-400">Confidence: {c.confidence_score}%</span>}
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-slate-600 group-hover:text-blue-400 transition-colors" />
+                  </div>
+                ))}
+                
+                {(!exceptionsData || exceptionsData.items.filter(c => c.classification !== 'matched').length === 0) && !isLoadingExceptions && (
+                  <div className="p-6 text-center text-slate-400 text-sm">
+                    No exceptions found in the latest dataset.
+                  </div>
+                )}
+                
                 <div className="p-3 text-center bg-slate-900/50">
-                  <button onClick={() => navigate(`/cases?dataset_id=${activeDataset.id}`)} className="text-sm text-blue-400 hover:text-blue-300 font-medium">
-                    Open Queue →
+                  <button onClick={() => navigate(`/cases?dataset_id=${activeDataset.id}`)} className="text-sm text-blue-400 hover:text-blue-300 font-medium cursor-pointer">
+                    Open Full Queue →
                   </button>
                 </div>
               </CardContent>

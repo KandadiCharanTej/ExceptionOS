@@ -36,7 +36,7 @@ export default function Analytics() {
   const classificationMap: Record<string, number> = {};
   const statusMap: Record<string, number> = {};
   
-  data.cases.forEach(c => {
+  data.items.forEach(c => {
     classificationMap[c.classification] = (classificationMap[c.classification] || 0) + 1;
     if (c.status) {
       statusMap[c.status] = (statusMap[c.status] || 0) + 1;

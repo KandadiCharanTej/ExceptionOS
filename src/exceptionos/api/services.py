@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional
 from datetime import date
 from decimal import Decimal
+import math
 
 from exceptionos.pipeline.unified import UnifiedCase
 from exceptionos.models import Transaction
@@ -43,6 +44,10 @@ class InvestigationService:
             bank_txn=self._deserialize_txn(record.bank_txn),
             is_duplicate=record.is_duplicate
         )
+        # Attach analyst annotations to the case object for downstream use
+        case.analyst_classification = record.analyst_classification
+        case.notes = record.notes
+        case.tags = record.tags
         return case
         
     def create_dataset(self, name: str, source_type: str, cases: List[UnifiedCase]) -> str:
@@ -182,7 +187,123 @@ class InvestigationService:
                 
             events = db.query(CaseEvent).filter(CaseEvent.case_id == record.id).order_by(CaseEvent.created_at.asc()).all()
             return [{"event_type": e.event_type, "description": e.description, "timestamp": e.created_at.isoformat()} for e in events]
-            
+
+    def update_case_annotations(self, case_id: str, analyst_classification: Optional[str] = None, notes: Optional[str] = None, tags: Optional[List[str]] = None, dataset_id: Optional[str] = None) -> Optional[dict]:
+        """Update analyst annotation fields for a case. Returns annotation dict if updated, None if not found."""
+        with SessionLocal() as db:
+            q = db.query(CaseRecord).filter(CaseRecord.key == case_id)
+            if dataset_id:
+                q = q.filter(CaseRecord.dataset_id == dataset_id)
+            else:
+                q = q.order_by(CaseRecord.created_at.desc())
+            record = q.first()
+            if not record:
+                return None
+
+            changes = []
+            if analyst_classification is not None:
+                record.analyst_classification = analyst_classification
+                changes.append(f"analyst_classification={analyst_classification}")
+            if notes is not None:
+                record.notes = notes
+                changes.append(f"notes updated")
+            if tags is not None:
+                record.tags = tags
+                changes.append(f"tags={','.join(tags)}")
+
+            # Create audit event
+            event = CaseEvent(
+                case_id=record.id,
+                event_type="ANALYST_ANNOTATION_UPDATED",
+                description=f"Analyst annotations updated: {'; '.join(changes)}"
+            )
+            db.add(event)
+            db.commit()
+            db.refresh(record)
+
+            return {
+                "case_id": record.key,
+                "analyst_classification": record.analyst_classification,
+                "notes": record.notes,
+                "tags": record.tags,
+            }
+
+    def delete_case(self, case_id: str, dataset_id: Optional[str] = None) -> bool:
+        """Hard delete a case and cascade delete related events, resolutions, verifications. Returns True if deleted."""
+        with SessionLocal() as db:
+            q = db.query(CaseRecord).filter(CaseRecord.key == case_id)
+            if dataset_id:
+                q = q.filter(CaseRecord.dataset_id == dataset_id)
+            else:
+                q = q.order_by(CaseRecord.created_at.desc())
+            record = q.first()
+            if not record:
+                return False
+            db.delete(record)
+            db.commit()
+            return True
+
+    def bulk_delete_cases(self, case_ids: List[str], dataset_id: Optional[str] = None) -> int:
+        """Delete multiple cases by key, returning the count of deleted records."""
+        with SessionLocal() as db:
+            q = db.query(CaseRecord).filter(CaseRecord.key.in_(case_ids))
+            if dataset_id:
+                q = q.filter(CaseRecord.dataset_id == dataset_id)
+            records = q.all()
+            count = len(records)
+            for r in records:
+                db.delete(r)
+            db.commit()
+            return count
+
+    def export_cases(self, dataset_id: Optional[str] = None, classification: Optional[str] = None, search: Optional[str] = None, fmt: str = "csv") -> str:
+        """Export cases as CSV or JSON string, respecting filters."""
+        with SessionLocal() as db:
+            query = db.query(CaseRecord)
+            if dataset_id:
+                query = query.filter(CaseRecord.dataset_id == dataset_id)
+            if classification:
+                query = query.filter(CaseRecord.classification == classification)
+            records = query.all()
+
+            if search:
+                lowered = search.lower()
+                records = [r for r in records if lowered in r.key.lower()]
+
+            if fmt == "json":
+                import json
+                data = []
+                for r in records:
+                    data.append({
+                        "case_id": r.key,
+                        "classification": r.classification,
+                        "analyst_classification": r.analyst_classification,
+                        "notes": r.notes,
+                        "tags": r.tags,
+                        "is_duplicate": r.is_duplicate,
+                        "dataset_id": r.dataset_id,
+                        "created_at": r.created_at.isoformat() if r.created_at else None,
+                    })
+                return json.dumps(data, default=str)
+
+            # CSV format
+            import csv, io
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["case_id", "classification", "analyst_classification", "notes", "tags", "is_duplicate", "dataset_id", "created_at"])
+            for r in records:
+                writer.writerow([
+                    r.key,
+                    r.classification,
+                    r.analyst_classification or "",
+                    r.notes or "",
+                    ",".join(r.tags) if r.tags else "",
+                    r.is_duplicate,
+                    r.dataset_id,
+                    r.created_at.isoformat() if r.created_at else "",
+                ])
+            return output.getvalue()
+
     def record_verification(self, case_id: str, status: str, explanation: str, dataset_id: Optional[str] = None):
         with SessionLocal() as db:
             q = db.query(CaseRecord).filter(CaseRecord.key == case_id)
@@ -208,6 +329,18 @@ class InvestigationService:
             )
             db.add(event)
             db.commit()
-
+            
+    def delete_dataset(self, dataset_id: str) -> bool:
+        """Hard delete a dataset and cascade delete related records.
+        Returns True if deleted, False if not found.
+        """
+        with SessionLocal() as db:
+            dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+            if not dataset:
+                return False
+            db.delete(dataset)
+            db.commit()
+            return True
+            
 # Singleton instance for the prototype
 investigation_service = InvestigationService()

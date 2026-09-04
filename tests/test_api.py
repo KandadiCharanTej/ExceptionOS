@@ -22,10 +22,10 @@ class TestAPI(unittest.TestCase):
         res_cases = self.client.get("/api/cases?limit=10")
         self.assertEqual(res_cases.status_code, 200)
         cases_data = res_cases.json()
-        self.assertTrue(len(cases_data["cases"]) > 0)
+        self.assertTrue(len(cases_data["items"]) > 0)
         
         # Investigate the first case
-        first_case_id = cases_data["cases"][0]["case_id"]
+        first_case_id = cases_data["items"][0]["case_id"]
         res_inv = self.client.get(f"/api/cases/{first_case_id}")
         self.assertEqual(res_inv.status_code, 200)
         inv_data = res_inv.json()

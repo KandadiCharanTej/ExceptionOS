@@ -28,6 +28,9 @@ class CaseRecord(Base):
     key = Column(String, nullable=False)
     classification = Column(String, nullable=False)
     is_duplicate = Column(Boolean, default=False)
+    analyst_classification = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
+    tags = Column(JSON, nullable=True)
     
     # Store the transaction info as JSON dicts
     ledger_txn = Column(JSON, nullable=True)

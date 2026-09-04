@@ -2,89 +2,98 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, BrainCircuit, History, CheckCircle, Clock, 
-  AlertCircle, Activity, FileText, List, Shield, Lightbulb
+  AlertCircle, Activity, FileText, List, Shield, Lightbulb, Edit3, Tag, Save, Columns
 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+
 import { 
-  getCase, getCaseHistory, resolveCase, verifyResolution 
+  getCase, getCaseHistory, resolveCase, verifyResolution, updateAnnotations
 } from '../services/api';
 import type { 
-  InvestigationResponse, ResolveActionResponse, VerificationResponse 
+  ResolveActionResponse, VerificationResponse 
 } from '../types/api';
 import { Card, CardContent, CardHeader, CardTitle, Badge, StatusBadge } from '../components/ui';
+import { cn } from '../App';
 
 export default function Investigation() {
   const { caseId } = useParams<{ caseId: string }>();
   const [searchParams] = useSearchParams();
   const datasetId = searchParams.get('dataset_id') || undefined;
   const navigate = useNavigate();
-  
-  const [data, setData] = useState<InvestigationResponse | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const queryClient = useQueryClient();
   
   const [actionInput, setActionInput] = useState('');
-  const [resolving, setResolving] = useState(false);
   const [resolveResult, setResolveResult] = useState<ResolveActionResponse | null>(null);
-  
-  const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerificationResponse | null>(null);
 
+  // Annotation State
+  const [notes, setNotes] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [analystClassification, setAnalystClassification] = useState('');
+  const [isEditingAnnotations, setIsEditingAnnotations] = useState(false);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['case', caseId, datasetId],
+    queryFn: () => getCase(caseId!, datasetId),
+    enabled: !!caseId,
+  });
+
+  const { data: historyData, refetch: refetchHistory } = useQuery({
+    queryKey: ['caseHistory', caseId, datasetId],
+    queryFn: () => getCaseHistory(caseId!, datasetId),
+    enabled: !!caseId,
+  });
+
   useEffect(() => {
-    if (caseId) fetchCase(caseId, datasetId);
-  }, [caseId, datasetId]);
-
-  const fetchCase = async (id: string, did?: string) => {
-    setLoading(true);
-    try {
-      const res = await getCase(id, did);
-      setData(res);
-      
-      const histRes = await getCaseHistory(id, did);
-      setHistory(histRes.events || []);
-
-      if (res.resolution_recommendation.recommended_action !== 'None') {
-        setActionInput(`Applied recommendation: ${res.resolution_recommendation.recommended_action}`);
+    if (data && !isEditingAnnotations) {
+      setNotes(data.notes || '');
+      setTagsInput((data.tags || []).join(', '));
+      setAnalystClassification(data.analyst_classification || '');
+      if (data.resolution_recommendation.recommended_action !== 'None' && !actionInput) {
+        setActionInput(`Applied recommendation: ${data.resolution_recommendation.recommended_action}`);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Failed to load case investigation');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [data, isEditingAnnotations]);
 
-  const handleResolve = async () => {
-    if (!caseId || !actionInput) return;
-    setResolving(true);
-    try {
-      const res = await resolveCase(caseId, actionInput, 'Admin User', datasetId);
+  const resolveMutation = useMutation({
+    mutationFn: () => resolveCase(caseId!, actionInput, 'Admin User', datasetId),
+    onSuccess: (res) => {
       setResolveResult(res);
       setVerifyResult(null);
-      const histRes = await getCaseHistory(caseId, datasetId);
-      setHistory(histRes.events || []);
-    } catch (err: any) {
-      alert('Failed to record resolution: ' + (err.response?.data?.detail || err.message));
-    } finally {
-      setResolving(false);
-    }
-  };
+      refetchHistory();
+      toast.success('Action recorded successfully');
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to record resolution')
+  });
 
-  const handleVerify = async () => {
-    if (!caseId) return;
-    setVerifying(true);
-    try {
-      const res = await verifyResolution(caseId, datasetId);
+  const verifyMutation = useMutation({
+    mutationFn: () => verifyResolution(caseId!, datasetId),
+    onSuccess: (res) => {
       setVerifyResult(res);
-      const histRes = await getCaseHistory(caseId, datasetId);
-      setHistory(histRes.events || []);
-    } catch (err: any) {
-      alert('Failed to verify resolution: ' + (err.response?.data?.detail || err.message));
-    } finally {
-      setVerifying(false);
-    }
-  };
+      refetchHistory();
+      if (res.status === 'VERIFIED_RESOLVED') toast.success('Verification successful');
+      else toast.error('Verification failed');
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to verify resolution')
+  });
 
-  if (loading && !data) {
+  const annotationsMutation = useMutation({
+    mutationFn: () => updateAnnotations(caseId!, {
+      notes,
+      tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
+      analyst_classification: analystClassification || undefined
+    }, datasetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['case', caseId, datasetId] });
+      refetchHistory();
+      toast.success('Annotations saved');
+      setIsEditingAnnotations(false);
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to save annotations')
+  });
+
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)]">
         <Activity className="h-10 w-10 text-blue-500 animate-spin mb-4" />
@@ -93,18 +102,20 @@ export default function Investigation() {
     );
   }
 
-  if (error || !data) {
+  if (isError || !data) {
     return (
       <div className="bg-red-500/10 text-red-400 p-6 rounded-xl border border-red-500/20 max-w-3xl mx-auto mt-12 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
         <h3 className="text-xl font-bold text-white mb-2">Investigation Error</h3>
-        <p className="text-slate-400 mb-6">{error || 'Case not found'}</p>
-        <button onClick={() => navigate('/cases')} className="px-6 py-2 bg-[#1E293B] hover:bg-slate-700 text-white rounded-md transition-colors">
+        <p className="text-slate-400 mb-6">{(error as Error)?.message || 'Case not found'}</p>
+        <button onClick={() => navigate('/cases')} className="px-6 py-2 bg-[#1E293B] hover:bg-slate-700 text-white rounded-md transition-colors cursor-pointer">
           Return to Queue
         </button>
       </div>
     );
   }
+
+  const history = historyData?.events || [];
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
@@ -112,7 +123,7 @@ export default function Investigation() {
         <div className="flex items-center space-x-4">
           <button 
             onClick={() => navigate(`/cases${datasetId ? `?dataset_id=${datasetId}` : ''}`)}
-            className="p-2 rounded-full hover:bg-[#1E293B] transition-colors text-slate-400 hover:text-white"
+            className="p-2 rounded-full hover:bg-[#1E293B] transition-colors text-slate-400 hover:text-white cursor-pointer"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -120,6 +131,11 @@ export default function Investigation() {
             <div className="flex items-center space-x-3 mb-1">
               <h2 className="text-2xl font-bold tracking-tight text-white font-mono">{data.case_id}</h2>
               <Badge variant="outline" className="border-slate-700 bg-slate-900">{data.classification.replace('_', ' ')}</Badge>
+              {data.analyst_classification && (
+                <Badge variant="secondary" className="bg-purple-900/40 text-purple-400 border-purple-900/50">
+                  Override: {data.analyst_classification.replace('_', ' ')}
+                </Badge>
+              )}
               <StatusBadge status={data.root_cause.status} />
             </div>
             <p className="text-slate-400 text-sm">Exception Intelligence Workspace</p>
@@ -135,8 +151,89 @@ export default function Investigation() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
-        {/* LEFT COLUMN: Timeline & Raw Data */}
+        {/* LEFT COLUMN: Timeline, Annotations, Audit */}
         <div className="xl:col-span-1 space-y-6">
+          <Card className="bg-[#0A0F1C] border-[#1E293B]">
+            <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B] flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center text-xs uppercase tracking-widest text-slate-400 font-semibold">
+                <Edit3 className="h-4 w-4 mr-2 text-purple-400" />
+                Analyst Annotations
+              </CardTitle>
+              {!isEditingAnnotations ? (
+                <button onClick={() => setIsEditingAnnotations(true)} className="text-xs text-blue-400 hover:text-blue-300 font-medium cursor-pointer">
+                  Edit
+                </button>
+              ) : (
+                <button onClick={() => annotationsMutation.mutate()} disabled={annotationsMutation.isPending} className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center cursor-pointer disabled:opacity-50">
+                  {annotationsMutation.isPending ? <Activity className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                  Save
+                </button>
+              )}
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Analyst Override Classification</label>
+                  {isEditingAnnotations ? (
+                    <select 
+                      value={analystClassification}
+                      onChange={(e) => setAnalystClassification(e.target.value)}
+                      className="w-full bg-[#05080F] border border-[#1E293B] text-slate-200 rounded-md text-sm px-3 py-2 focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">No Override</option>
+                      <option value="matched">Matched (False Positive)</option>
+                      <option value="missing_in_ledger">Missing in Ledger</option>
+                      <option value="missing_in_gateway">Missing in Gateway</option>
+                      <option value="missing_in_bank">Missing in Bank</option>
+                      <option value="amount_mismatch">Amount Mismatch</option>
+                      <option value="date_mismatch">Date Mismatch</option>
+                      <option value="duplicate_detected">Duplicate</option>
+                      <option value="system_error">System Error</option>
+                    </select>
+                  ) : (
+                    <div className="text-sm text-slate-300">{data.analyst_classification ? data.analyst_classification.replace('_', ' ') : <span className="text-slate-600 italic">None</span>}</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Investigation Notes</label>
+                  {isEditingAnnotations ? (
+                    <textarea 
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
+                      className="w-full bg-[#05080F] border border-[#1E293B] text-slate-200 rounded-md text-sm px-3 py-2 focus:outline-none focus:border-blue-500 resize-none"
+                      placeholder="Add case notes..."
+                    />
+                  ) : (
+                    <div className="text-sm text-slate-300 whitespace-pre-wrap">{data.notes || <span className="text-slate-600 italic">No notes</span>}</div>
+                  )}
+                </div>
+                <div>
+                  <label className="flex items-center text-xs font-medium text-slate-500 mb-1">
+                    <Tag className="w-3 h-3 mr-1" /> Tags
+                  </label>
+                  {isEditingAnnotations ? (
+                    <input 
+                      type="text" 
+                      value={tagsInput}
+                      onChange={(e) => setTagsInput(e.target.value)}
+                      className="w-full bg-[#05080F] border border-[#1E293B] text-slate-200 rounded-md text-sm px-3 py-2 focus:outline-none focus:border-blue-500"
+                      placeholder="Comma separated (e.g. urgent, manual-review)"
+                    />
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {data.tags && data.tags.length > 0 ? (
+                        data.tags.map((tag, i) => <Badge key={i} variant="secondary" className="text-xs py-0 h-5">{tag}</Badge>)
+                      ) : (
+                        <span className="text-sm text-slate-600 italic">No tags</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-[#0A0F1C] border-[#1E293B]">
             <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B]">
               <CardTitle className="flex items-center text-xs uppercase tracking-widest text-slate-400 font-semibold">
@@ -148,17 +245,12 @@ export default function Investigation() {
               <div className="relative border-l border-[#1E293B] ml-3 space-y-8">
                 {data.timeline.map((event, idx) => (
                   <div key={idx} className="relative pl-6">
-                    <div className={`absolute -left-[5px] top-1.5 h-2 w-2 rounded-full ring-4 ring-[#0A0F1C] ${
+                    <div className={cn("absolute -left-[5px] top-1.5 h-2 w-2 rounded-full ring-4 ring-[#0A0F1C]",
                       event.event_type.includes('exception') ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]'
-                    }`} />
+                    )} />
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{event.source}</span>
                       <span className="text-sm font-medium text-slate-200">{event.description}</span>
-                      {Object.keys(event.evidence).length > 0 && (
-                        <div className="mt-3 bg-[#05080F] rounded-md p-3 text-xs font-mono text-slate-400 border border-[#1E293B] overflow-x-auto">
-                          <pre>{JSON.stringify(event.evidence, null, 2)}</pre>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -187,9 +279,7 @@ export default function Investigation() {
                           {event.description}
                         </span>
                         <span className="text-xs text-slate-500 mt-1">
-                          {new Date(event.timestamp).toLocaleString(undefined, {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                          })}
+                          {new Date(event.timestamp).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -202,8 +292,57 @@ export default function Investigation() {
           </Card>
         </div>
 
-        {/* RIGHT COLUMN: Intelligence Core */}
+        {/* RIGHT COLUMN: Intelligence Core & 3-Way Comparison */}
         <div className="xl:col-span-2 space-y-6">
+          <Card className="bg-[#0A0F1C] border-[#1E293B]">
+            <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B]">
+              <CardTitle className="flex items-center text-xs uppercase tracking-widest text-slate-400 font-semibold">
+                <Columns className="h-4 w-4 mr-2 text-emerald-400" />
+                3-Way Transaction Comparison
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 px-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-[#1E293B]/50 border-b border-[#1E293B] text-slate-400">
+                    <tr>
+                      <th className="px-6 py-3 font-medium">Field</th>
+                      <th className="px-6 py-3 font-medium text-blue-400">Ledger</th>
+                      <th className="px-6 py-3 font-medium text-emerald-400">Gateway</th>
+                      <th className="px-6 py-3 font-medium text-indigo-400">Bank</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1E293B] text-slate-300">
+                    <tr className="hover:bg-[#1E293B]/30">
+                      <td className="px-6 py-3 font-medium text-slate-400">Transaction ID</td>
+                      <td className="px-6 py-3 font-mono text-xs">{data.transactions.ledger?.key || '-'}</td>
+                      <td className="px-6 py-3 font-mono text-xs">{data.transactions.gateway?.key || '-'}</td>
+                      <td className="px-6 py-3 font-mono text-xs">{data.transactions.bank?.key || '-'}</td>
+                    </tr>
+                    <tr className="hover:bg-[#1E293B]/30">
+                      <td className="px-6 py-3 font-medium text-slate-400">Amount</td>
+                      <td className={cn("px-6 py-3 font-mono", !data.transactions.ledger ? "text-slate-500" : "text-white")}>
+                        {data.transactions.ledger ? `${data.transactions.ledger.currency} ${data.transactions.ledger.amount.toFixed(2)}` : 'Missing'}
+                      </td>
+                      <td className={cn("px-6 py-3 font-mono", !data.transactions.gateway ? "text-slate-500" : "text-white")}>
+                        {data.transactions.gateway ? `${data.transactions.gateway.currency} ${data.transactions.gateway.amount.toFixed(2)}` : 'Missing'}
+                      </td>
+                      <td className={cn("px-6 py-3 font-mono", !data.transactions.bank ? "text-slate-500" : "text-white")}>
+                        {data.transactions.bank ? `${data.transactions.bank.currency} ${data.transactions.bank.amount.toFixed(2)}` : 'Missing'}
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#1E293B]/30">
+                      <td className="px-6 py-3 font-medium text-slate-400">Date</td>
+                      <td className="px-6 py-3">{data.transactions.ledger?.date || '-'}</td>
+                      <td className="px-6 py-3">{data.transactions.gateway?.date || '-'}</td>
+                      <td className="px-6 py-3">{data.transactions.bank?.date || '-'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-gradient-to-br from-[#0A0F1C] to-[#0D1526] border-blue-900/50 shadow-xl shadow-blue-900/10">
             <CardHeader className="bg-blue-900/10 pb-4 border-b border-blue-900/30">
               <div className="flex items-center justify-between">
@@ -283,11 +422,11 @@ export default function Investigation() {
                       placeholder="Enter resolution notes or command..."
                     />
                     <button
-                      onClick={handleResolve}
-                      disabled={resolving || !actionInput}
-                      className="inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-blue-600 text-white hover:bg-blue-500 px-6 py-2.5 disabled:opacity-50 shadow-[0_0_15px_rgba(37,99,235,0.2)]"
+                      onClick={() => resolveMutation.mutate()}
+                      disabled={resolveMutation.isPending || !actionInput}
+                      className="inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-blue-600 text-white hover:bg-blue-500 px-6 py-2.5 disabled:opacity-50 shadow-[0_0_15px_rgba(37,99,235,0.2)] cursor-pointer"
                     >
-                      {resolving ? <Activity className="h-4 w-4 animate-spin" /> : 'Record Action'}
+                      {resolveMutation.isPending ? <Activity className="h-4 w-4 animate-spin" /> : 'Record Action'}
                     </button>
                   </div>
                 </div>
@@ -304,30 +443,30 @@ export default function Investigation() {
                   {!verifyResult ? (
                     <div className="flex justify-end border-t border-[#1E293B] pt-6">
                       <button
-                        onClick={handleVerify}
-                        disabled={verifying}
-                        className="inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-indigo-600 text-white hover:bg-indigo-500 px-8 py-3 disabled:opacity-50 shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+                        onClick={() => verifyMutation.mutate()}
+                        disabled={verifyMutation.isPending}
+                        className="inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-indigo-600 text-white hover:bg-indigo-500 px-8 py-3 disabled:opacity-50 shadow-[0_0_15px_rgba(79,70,229,0.3)] cursor-pointer"
                       >
-                        {verifying ? <Activity className="h-5 w-5 animate-spin mr-2" /> : <Shield className="h-5 w-5 mr-2" />}
+                        {verifyMutation.isPending ? <Activity className="h-5 w-5 animate-spin mr-2" /> : <Shield className="h-5 w-5 mr-2" />}
                         Verify Resolution State
                       </button>
                     </div>
                   ) : (
-                    <div className={`border rounded-xl p-5 flex items-start space-x-4 ${
+                    <div className={cn("border rounded-xl p-5 flex items-start space-x-4",
                       verifyResult.status === 'VERIFIED_RESOLVED' 
                         ? 'bg-emerald-900/10 border-emerald-900/30' 
                         : 'bg-amber-900/10 border-amber-900/30'
-                    }`}>
+                    )}>
                       {verifyResult.status === 'VERIFIED_RESOLVED' ? (
                         <CheckCircle className="h-8 w-8 text-emerald-500 shrink-0" />
                       ) : (
                         <AlertCircle className="h-8 w-8 text-amber-500 shrink-0" />
                       )}
                       <div>
-                        <h4 className={`text-base font-bold tracking-tight mb-1 ${verifyResult.status === 'VERIFIED_RESOLVED' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        <h4 className={cn("text-base font-bold tracking-tight mb-1", verifyResult.status === 'VERIFIED_RESOLVED' ? 'text-emerald-400' : 'text-amber-400')}>
                           {verifyResult.status.replace('_', ' ')}
                         </h4>
-                        <p className={`text-sm ${verifyResult.status === 'VERIFIED_RESOLVED' ? 'text-emerald-200/70' : 'text-amber-200/70'}`}>
+                        <p className={cn("text-sm", verifyResult.status === 'VERIFIED_RESOLVED' ? 'text-emerald-200/70' : 'text-amber-200/70')}>
                           {verifyResult.explanation}
                         </p>
                       </div>

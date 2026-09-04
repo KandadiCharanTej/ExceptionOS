@@ -27,6 +27,20 @@ export const runReconciliation = async (): Promise<PipelineRunResponse> => {
   return response.data;
 };
 
+export const uploadReconciliationFiles = async (ledger: File, gateway: File, bank: File): Promise<PipelineRunResponse> => {
+  const formData = new FormData();
+  formData.append('ledger', ledger);
+  formData.append('gateway', gateway);
+  formData.append('bank', bank);
+
+  const response = await api.post<PipelineRunResponse>('/api/reconcile/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export const getCases = async (page = 1, limit = 50, classification?: string): Promise<CaseListResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),

@@ -1,5 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from collections import Counter
+import tempfile
+import os
+import shutil
 
 from exceptionos.loaders import load_csv
 from exceptionos.pipeline.unified import run_pipeline
@@ -7,6 +10,55 @@ from exceptionos.api.schemas import PipelineRunResponse
 from exceptionos.api.services import investigation_service
 
 router = APIRouter()
+
+@router.post("/api/reconcile/upload", response_model=PipelineRunResponse)
+def run_upload_reconciliation(
+    ledger: UploadFile = File(...),
+    gateway: UploadFile = File(...),
+    bank: UploadFile = File(...)
+):
+    temp_dir = tempfile.mkdtemp()
+    
+    try:
+        paths = {}
+        for name, file in [("ledger", ledger), ("gateway", gateway), ("bank", bank)]:
+            if not file.filename.lower().endswith('.csv') and file.content_type != 'text/csv':
+                raise HTTPException(status_code=400, detail=f"{name.title()} file must be a CSV.")
+            
+            file_path = os.path.join(temp_dir, f"{name}.csv")
+            paths[name] = file_path
+            
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+        
+        try:
+            l = load_csv(paths["ledger"])
+            g = load_csv(paths["gateway"])
+            b = load_csv(paths["bank"])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"CSV Validation Error: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error parsing CSV files: {str(e)}")
+
+        cases = run_pipeline(l, g, b, amount_tolerance="15.00")
+        investigation_service.set_cases(cases)
+        
+        total = len(cases)
+        classifications = [c.classification for c in cases]
+        counts = dict(Counter(classifications))
+        
+        matched = counts.pop("matched", 0)
+        exceptions = total - matched
+        
+        return PipelineRunResponse(
+            total_cases=total,
+            matched_cases=matched,
+            exceptions_found=exceptions,
+            classification_counts=counts
+        )
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
 
 @router.post("/api/reconcile", response_model=PipelineRunResponse)
 def run_reconciliation():

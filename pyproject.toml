@@ -11,7 +11,8 @@ requires-python = ">=3.9"
 dependencies = [
     "fastapi",
     "uvicorn",
-    "pydantic"
+    "pydantic",
+    "python-multipart"
 ]
 license = { text = "MIT" }
 authors = [{ name = "Kandadi Charan Tej", email = "kandadicharantej21@gmail.com" }]

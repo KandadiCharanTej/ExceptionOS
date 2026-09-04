@@ -12,7 +12,8 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "pydantic",
-    "python-multipart"
+    "python-multipart",
+    "sqlalchemy"
 ]
 license = { text = "MIT" }
 authors = [{ name = "Kandadi Charan Tej", email = "kandadicharantej21@gmail.com" }]

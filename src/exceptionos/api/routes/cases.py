@@ -8,7 +8,8 @@ from exceptionos.api.schemas import (
     TransactionSchema, TimelineEventSchema, HypothesisSchema,
     RootCauseDecisionSchema, ResolutionRecommendationSchema,
     SimilarityResultSchema, MemoryCaseSchema,
-    ResolveActionRequest, ResolveActionResponse, VerificationResponse
+    ResolveActionRequest, ResolveActionResponse, VerificationResponse,
+    DatasetListResponse, DatasetSchema
 )
 from exceptionos.api.services import investigation_service
 
@@ -34,15 +35,56 @@ def serialize_txn(txn) -> Optional[TransactionSchema]:
         row=txn.row
     )
 
+@router.get("/api/datasets", response_model=DatasetListResponse)
+def list_datasets():
+    datasets = investigation_service.get_datasets()
+    return DatasetListResponse(
+        datasets=[DatasetSchema(
+            id=d.id,
+            name=d.name,
+            source_type=d.source_type,
+            status=d.status,
+            total_cases=d.total_cases,
+            matched_cases=d.matched_cases,
+            exception_count=d.exception_count,
+            created_at=d.created_at
+        ) for d in datasets]
+    )
+
+@router.get("/api/datasets/{dataset_id}", response_model=DatasetSchema)
+def get_dataset(dataset_id: str):
+    d = investigation_service.get_dataset(dataset_id)
+    if not d:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    return DatasetSchema(
+        id=d.id,
+        name=d.name,
+        source_type=d.source_type,
+        status=d.status,
+        total_cases=d.total_cases,
+        matched_cases=d.matched_cases,
+        exception_count=d.exception_count,
+        created_at=d.created_at
+    )
+
 @router.get("/api/cases", response_model=CaseListResponse)
 def list_cases(
+    dataset_id: Optional[str] = None,
     classification: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=100)
 ):
-    all_cases = investigation_service.get_all_cases()
+    if dataset_id:
+        all_cases = investigation_service.get_cases_for_dataset(dataset_id)
+    else:
+        # Fallback to the latest dataset for backward compatibility
+        d = investigation_service.get_latest_dataset()
+        if not d:
+            raise HTTPException(status_code=400, detail="Pipeline has not been run yet. Call /api/reconcile first.")
+        all_cases = investigation_service.get_cases_for_dataset(d.id)
+        
     if not all_cases:
-        raise HTTPException(status_code=400, detail="Pipeline has not been run yet. Call /api/reconcile first.")
+        raise HTTPException(status_code=404, detail="No cases found.")
         
     filtered = all_cases
     if classification:
@@ -55,9 +97,6 @@ def list_cases(
     
     summaries = []
     for c in paginated:
-        # We don't want to run full intelligence pipeline for all cases just to get status,
-        # but the prompt asked for root_cause, status, etc in the summary.
-        # For a production app we'd save this to a DB. For this prototype, we'll quickly run it.
         timeline = build_timeline(c)
         hypotheses = generate_hypotheses(c, timeline)
         decision = select_root_cause(c, timeline, hypotheses)
@@ -79,8 +118,8 @@ def list_cases(
     )
 
 @router.get("/api/cases/{case_id}", response_model=InvestigationResponse)
-def get_case(case_id: str):
-    case = investigation_service.get_case(case_id)
+def get_case(case_id: str, dataset_id: Optional[str] = None):
+    case = investigation_service.get_case(case_id, dataset_id=dataset_id)
     if not case:
         raise HTTPException(status_code=404, detail=f"Case {case_id} was not found")
         
@@ -147,8 +186,8 @@ def get_case(case_id: str):
     )
 
 @router.post("/api/cases/{case_id}/resolve", response_model=ResolveActionResponse)
-def resolve_case(case_id: str, payload: ResolveActionRequest):
-    case = investigation_service.get_case(case_id)
+def resolve_case(case_id: str, payload: ResolveActionRequest, dataset_id: Optional[str] = None):
+    case = investigation_service.get_case(case_id, dataset_id=dataset_id)
     if not case:
         raise HTTPException(status_code=404, detail=f"Case {case_id} was not found")
         
@@ -165,7 +204,7 @@ def resolve_case(case_id: str, payload: ResolveActionRequest):
         status="RECORDED"
     )
     
-    investigation_service.record_action(action)
+    investigation_service.record_action(action, dataset_id=dataset_id)
     
     return ResolveActionResponse(
         case_id=action.case_id,
@@ -177,24 +216,26 @@ def resolve_case(case_id: str, payload: ResolveActionRequest):
     )
 
 @router.post("/api/cases/{case_id}/verify", response_model=VerificationResponse)
-def verify_case(case_id: str):
-    case = investigation_service.get_case(case_id)
+def verify_case(case_id: str, dataset_id: Optional[str] = None):
+    case = investigation_service.get_case(case_id, dataset_id=dataset_id)
     if not case:
         raise HTTPException(status_code=404, detail=f"Case {case_id} was not found")
         
-    action = investigation_service.get_action(case_id)
+    action = investigation_service.get_action(case_id, dataset_id=dataset_id)
     if not action:
         raise HTTPException(status_code=400, detail="No resolution action has been recorded for this case.")
         
-    # In a real app, we would fetch the UPDATED case from the database after a new pipeline run.
-    # For this API prototype, we will assume the case hasn't magically changed in memory unless modified.
-    # To demonstrate functionality, we'll verify the same case, which will usually return STILL_OPEN
-    # unless it was a NO_EXCEPTION.
+    verification = verify_resolution(action, case, case) 
     
-    verification = verify_resolution(action, case, case) # using the same case as both original and updated
+    investigation_service.record_verification(case_id, verification.status, verification.explanation, dataset_id=dataset_id)
     
     return VerificationResponse(
         case_id=case_id,
         status=verification.status,
         explanation=verification.explanation
     )
+    
+@router.get("/api/cases/{case_id}/history")
+def get_case_history(case_id: str, dataset_id: Optional[str] = None):
+    events = investigation_service.get_case_events(case_id, dataset_id=dataset_id)
+    return {"events": events}

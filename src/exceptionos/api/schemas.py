@@ -7,10 +7,24 @@ class HealthResponse(BaseModel):
     service: str
 
 class PipelineRunResponse(BaseModel):
+    dataset_id: str
     total_cases: int
     matched_cases: int
     exceptions_found: int
     classification_counts: Dict[str, int]
+
+class DatasetSchema(BaseModel):
+    id: str
+    name: str
+    source_type: str
+    status: str
+    total_cases: int
+    matched_cases: int
+    exception_count: int
+    created_at: datetime
+    
+class DatasetListResponse(BaseModel):
+    datasets: List[DatasetSchema]
 
 class CaseSummarySchema(BaseModel):
     case_id: str

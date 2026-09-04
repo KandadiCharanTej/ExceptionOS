@@ -3,6 +3,7 @@ import { getCases } from '../services/api';
 import type { CaseListResponse } from '../types/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Activity } from 'lucide-react';
 
 export default function Analytics() {
   const [data, setData] = useState<CaseListResponse | null>(null);
@@ -24,8 +25,9 @@ export default function Analytics() {
 
   if (loading || !data) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)]">
+        <Activity className="h-10 w-10 text-blue-500 animate-spin mb-4" />
+        <p className="text-slate-400 font-medium">Aggregating historical intelligence data...</p>
       </div>
     );
   }
@@ -56,23 +58,26 @@ export default function Analytics() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Analytics</h2>
-        <p className="text-slate-500">Visualization of historical exception data.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-white mb-1">Intelligence Analytics</h2>
+        <p className="text-slate-400">Visualization of historical exception data and resolution trends.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Exception Classifications</CardTitle>
+        <Card className="bg-[#0A0F1C] border-[#1E293B]">
+          <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B]">
+            <CardTitle className="text-slate-300">Exception Classifications</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={classificationData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
-                  <Tooltip cursor={{fill: '#f1f5f9'}} />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1E293B" />
+                  <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                  <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12, fill: '#cbd5e1' }} stroke="#1E293B" />
+                  <Tooltip 
+                    cursor={{fill: '#1E293B'}} 
+                    contentStyle={{ backgroundColor: '#05080F', borderColor: '#1E293B', color: '#fff' }}
+                  />
                   <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -80,11 +85,11 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Root Cause Status Distribution</CardTitle>
+        <Card className="bg-[#0A0F1C] border-[#1E293B]">
+          <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B]">
+            <CardTitle className="text-slate-300">Root Cause Status Distribution</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -101,8 +106,8 @@ export default function Analytics() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend />
+                  <Tooltip contentStyle={{ backgroundColor: '#05080F', borderColor: '#1E293B', color: '#fff' }} />
+                  <Legend wrapperStyle={{ color: '#cbd5e1' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

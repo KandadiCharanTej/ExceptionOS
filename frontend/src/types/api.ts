@@ -1,8 +1,24 @@
 export interface PipelineRunResponse {
+  dataset_id: string;
   total_cases: number;
   matched_cases: number;
   exceptions_found: number;
   classification_counts: Record<string, number>;
+}
+
+export interface Dataset {
+  id: string;
+  name: string;
+  source_type: string;
+  status: string;
+  total_cases: number;
+  matched_cases: number;
+  exception_count: number;
+  created_at: string;
+}
+
+export interface DatasetListResponse {
+  datasets: Dataset[];
 }
 
 export interface CaseSummarySchema {

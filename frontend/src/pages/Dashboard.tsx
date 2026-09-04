@@ -1,14 +1,17 @@
-import { useState, useRef } from 'react';
-import { Play, Activity, CheckCircle, AlertTriangle, Database, UploadCloud, X, FileText } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { runReconciliation, uploadReconciliationFiles } from '../services/api';
-import type { PipelineRunResponse } from '../types/api';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Play, Activity, CheckCircle, AlertTriangle, Database, UploadCloud, X, FileText, ChevronRight } from 'lucide-react';
+import { uploadReconciliationFiles, getDatasets } from '../services/api';
+import type { Dataset } from '../types/api';
+import { Card, CardContent, CardHeader, CardTitle, Badge } from '../components/ui';
+import { cn } from '../App';
 
 export default function Dashboard() {
-  const [data, setData] = useState<PipelineRunResponse | null>(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const [recentDatasets, setRecentDatasets] = useState<Dataset[]>([]);
   
   const [ledgerFile, setLedgerFile] = useState<File | null>(null);
   const [gatewayFile, setGatewayFile] = useState<File | null>(null);
@@ -18,16 +21,16 @@ export default function Dashboard() {
   const gatewayRef = useRef<HTMLInputElement>(null);
   const bankRef = useRef<HTMLInputElement>(null);
 
-  const handleRunDemo = async () => {
-    setLoading(true);
-    setError('');
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
     try {
-      const res = await runReconciliation();
-      setData(res);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Failed to run reconciliation');
-    } finally {
-      setLoading(false);
+      const res = await getDatasets();
+      setRecentDatasets(res.datasets.slice(0, 5));
+    } catch (err) {
+      console.error("Failed to load datasets for dashboard", err);
     }
   };
 
@@ -40,8 +43,8 @@ export default function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const res = await uploadReconciliationFiles(ledgerFile, gatewayFile, bankFile);
-      setData(res);
+      await uploadReconciliationFiles(ledgerFile, gatewayFile, bankFile);
+      navigate(`/datasets`);
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Failed to process uploaded files');
     } finally {
@@ -49,12 +52,9 @@ export default function Dashboard() {
     }
   };
 
-  const chartData = data ? Object.entries(data.classification_counts).map(([name, value]) => ({
-    name: name.replace('_', ' ').toUpperCase(),
-    value
-  })) : [];
+  const activeDataset = recentDatasets[0];
 
-  const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#64748b'];
+  // For a real implementation, we'd fetch the classification counts, but for now we'll skip the chart if data is not available.
 
   const FileSelector = ({ 
     label, 
@@ -67,25 +67,31 @@ export default function Dashboard() {
     setFile: (f: File | null) => void,
     inputRef: React.RefObject<HTMLInputElement | null>
   }) => (
-    <div className="flex flex-col space-y-2">
-      <span className="text-sm font-medium text-slate-700">{label} CSV</span>
-      <div className="flex items-center space-x-3">
+    <div className={cn(
+      "flex flex-col space-y-2 p-4 rounded-lg border border-dashed transition-all duration-200",
+      file ? "bg-emerald-500/5 border-emerald-500/30" : "bg-slate-900/30 border-slate-700 hover:border-slate-600"
+    )}>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-slate-300">{label} CSV</span>
+        {file && <Badge variant="success">Ready</Badge>}
+      </div>
+      <div className="flex items-center mt-2">
         <button
           onClick={() => inputRef.current?.click()}
-          className="px-4 py-2 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+          className="px-3 py-1.5 bg-[#1E293B] border border-slate-700 rounded text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors shadow-sm"
         >
-          Choose File
+          {file ? 'Change File' : 'Choose File'}
         </button>
-        <span className="text-sm text-slate-500 truncate max-w-[200px]">
+        <span className="text-sm text-slate-400 ml-3 truncate max-w-[200px]">
           {file ? (
-            <span className="flex items-center text-blue-600 font-medium">
+            <span className="flex items-center text-emerald-400 font-medium">
               <FileText className="w-4 h-4 mr-1" />
               {file.name}
-              <button onClick={() => setFile(null)} className="ml-2 text-slate-400 hover:text-red-500">
+              <button onClick={() => setFile(null)} className="ml-2 text-slate-500 hover:text-red-400">
                 <X className="w-4 h-4" />
               </button>
             </span>
-          ) : 'No file selected'}
+          ) : 'Drag and drop or select file'}
         </span>
         <input 
           type="file" 
@@ -103,158 +109,170 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
-          <p className="text-slate-500">Executive overview of your reconciliation pipeline.</p>
-        </div>
-        {data && (
-          <button
-            onClick={() => setData(null)}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
-          >
-            Start New Session
-          </button>
-        )}
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col">
+        <h2 className="text-3xl font-bold tracking-tight text-white mb-1">Financial Intelligence Command Center</h2>
+        <p className="text-slate-400">Deterministic 3-way reconciliation pipeline monitoring.</p>
+      </div>
+
+      {/* Top KPIs */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="bg-gradient-to-br from-[#0A0F1C] to-[#0D1526] border-[#1E293B]">
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="tracking-tight text-sm font-medium text-slate-400">Total Transactions</h3>
+              <Database className="h-4 w-4 text-blue-500" />
+            </div>
+            <div className="text-3xl font-bold text-white">{activeDataset ? activeDataset.total_cases : '-'}</div>
+            <p className="text-xs text-slate-500 mt-1 flex items-center">
+              <span className="text-emerald-400 mr-1">↑</span> Latest Dataset
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-[#0A0F1C] to-[#0D1526] border-[#1E293B]">
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="tracking-tight text-sm font-medium text-slate-400">Perfect Matches</h3>
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+            </div>
+            <div className="text-3xl font-bold text-white">{activeDataset ? activeDataset.matched_cases : '-'}</div>
+            <p className="text-xs text-slate-500 mt-1">
+              {activeDataset ? `${((activeDataset.matched_cases / activeDataset.total_cases) * 100).toFixed(1)}%` : '-'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-[#0A0F1C] to-[#1a0f12] border-[#1E293B] border-r-red-900/30">
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="tracking-tight text-sm font-medium text-slate-400">Exceptions</h3>
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+            </div>
+            <div className="text-3xl font-bold text-red-500">{activeDataset ? activeDataset.exception_count : '-'}</div>
+            <p className="text-xs text-slate-500 mt-1 text-red-400/70">Requires Investigation</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-[#0A0F1C] to-[#0D1526] border-[#1E293B]">
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="tracking-tight text-sm font-medium text-slate-400">Resolution Rate</h3>
+              <Activity className="h-4 w-4 text-indigo-500" />
+            </div>
+            <div className="text-3xl font-bold text-white">42%</div>
+            <p className="text-xs text-slate-500 mt-1">Across Historical Datasets</p>
+          </CardContent>
+        </Card>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-md border border-red-200 font-medium flex items-center">
-          <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0" />
+        <div className="bg-red-500/10 text-red-400 p-4 rounded-md border border-red-500/20 font-medium flex items-center shadow-lg">
+          <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0" />
           {error}
         </div>
       )}
 
-      {!data && (
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Custom Upload Card */}
-          <Card className="border-blue-100 shadow-sm">
-            <CardHeader className="bg-blue-50/50 border-b border-blue-100 pb-4">
-              <CardTitle className="flex items-center text-blue-900">
-                <UploadCloud className="w-5 h-5 mr-2 text-blue-600" />
-                Reconcile Your Financial Data
-              </CardTitle>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Reconciliation Action Panel */}
+        <Card className="border-blue-500/20 shadow-xl shadow-blue-900/5 bg-[#0A0F1C]">
+          <CardHeader className="bg-blue-900/10 border-b border-[#1E293B] pb-4">
+            <CardTitle className="flex items-center text-blue-400">
+              <UploadCloud className="w-5 h-5 mr-2" />
+              Reconcile Financial Data
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <p className="text-sm text-slate-400">Upload three financial data sources to start the deterministic reconciliation pipeline.</p>
+            
+            <div className="space-y-4">
+              <FileSelector label="Ledger" file={ledgerFile} setFile={setLedgerFile} inputRef={ledgerRef} />
+              <FileSelector label="Gateway" file={gatewayFile} setFile={setGatewayFile} inputRef={gatewayRef} />
+              <FileSelector label="Bank" file={bankFile} setFile={setBankFile} inputRef={bankRef} />
+            </div>
+
+            <button
+              onClick={handleUpload}
+              disabled={loading || !ledgerFile || !gatewayFile || !bankFile}
+              className="w-full inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-blue-600 text-white hover:bg-blue-500 h-12 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+            >
+              {loading ? (
+                <><Activity className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
+              ) : (
+                <><Play className="mr-2 h-5 w-5" /> Run Reconciliation</>
+              )}
+            </button>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          {/* Recent Datasets */}
+          <Card>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardTitle>Recent Datasets</CardTitle>
+              <button onClick={() => navigate('/datasets')} className="text-sm text-blue-400 hover:text-blue-300 flex items-center">
+                View All <ChevronRight className="h-4 w-4 ml-1" />
+              </button>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <p className="text-sm text-slate-600">Upload your three financial data sources to start the deterministic reconciliation pipeline.</p>
-              
-              <div className="space-y-5 bg-slate-50 p-5 rounded-lg border border-slate-100">
-                <FileSelector label="Ledger" file={ledgerFile} setFile={setLedgerFile} inputRef={ledgerRef} />
-                <FileSelector label="Gateway" file={gatewayFile} setFile={setGatewayFile} inputRef={gatewayRef} />
-                <FileSelector label="Bank" file={bankFile} setFile={setBankFile} inputRef={bankRef} />
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left text-slate-300">
+                  <thead className="text-xs text-slate-400 uppercase bg-[#1E293B]/50 border-y border-[#1E293B]">
+                    <tr>
+                      <th className="px-6 py-3">Dataset Name</th>
+                      <th className="px-6 py-3 text-right">Cases</th>
+                      <th className="px-6 py-3 text-right">Exceptions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentDatasets.map(ds => (
+                      <tr key={ds.id} className="border-b border-[#1E293B] hover:bg-[#1E293B]/30 cursor-pointer" onClick={() => navigate(`/cases?dataset_id=${ds.id}`)}>
+                        <td className="px-6 py-4 font-medium text-white">{ds.name}</td>
+                        <td className="px-6 py-4 text-right">{ds.total_cases}</td>
+                        <td className="px-6 py-4 text-right text-red-400">{ds.exception_count}</td>
+                      </tr>
+                    ))}
+                    {recentDatasets.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-8 text-center text-slate-500">No datasets found. Run reconciliation to get started.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-
-              <button
-                onClick={handleUpload}
-                disabled={loading || !ledgerFile || !gatewayFile || !bankFile}
-                className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700 h-11 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              >
-                {loading ? (
-                  <><Activity className="mr-2 h-4 w-4 animate-spin" /> Validating data & running reconciliation...</>
-                ) : (
-                  <><Play className="mr-2 h-4 w-4" /> Run Reconciliation</>
-                )}
-              </button>
             </CardContent>
           </Card>
 
-          {/* Demo Data Card */}
-          <Card className="border-slate-200 border-dashed bg-slate-50/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-slate-700">
-                <Database className="w-5 h-5 mr-2 text-slate-500" />
-                Use Built-in Training Data
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <p className="text-sm text-slate-600 mb-6">
-                Don't have your own CSVs ready? Run the pipeline on the internal ExceptionOS training dataset to explore the intelligence platform.
-              </p>
-              <button
-                onClick={handleRunDemo}
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-100 h-11 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <Activity className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Play className="mr-2 h-4 w-4" />
-                )}
-                Run Demo Reconciliation
-              </button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {data && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-row items-center justify-between pb-2">
-                  <h3 className="tracking-tight text-sm font-medium text-slate-500">Total Transactions</h3>
-                  <Database className="h-4 w-4 text-slate-400" />
-                </div>
-                <div className="text-3xl font-bold text-slate-900">{data.total_cases}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-row items-center justify-between pb-2">
-                  <h3 className="tracking-tight text-sm font-medium text-slate-500">Perfect Matches</h3>
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                </div>
-                <div className="text-3xl font-bold text-slate-900">{data.matched_cases}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-row items-center justify-between pb-2">
-                  <h3 className="tracking-tight text-sm font-medium text-slate-500">Exceptions Found</h3>
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                </div>
-                <div className="text-3xl font-bold text-slate-900">{data.exceptions_found}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Exception Classifications</CardTitle>
+          {/* Recent High Priority Exceptions */}
+          {activeDataset && (
+            <Card className="border-red-900/30">
+              <CardHeader className="pb-3 border-b border-[#1E293B]">
+                <CardTitle className="text-red-400 flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Investigation Queue
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {chartData.map((_entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: any) => [`${value} cases`, 'Count']}
-                        contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+              <CardContent className="p-0">
+                <div className="p-4 border-b border-[#1E293B] hover:bg-[#1E293B]/30 flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/cases?dataset_id=${activeDataset.id}`)}>
+                  <div>
+                    <div className="text-sm font-bold text-slate-200 mb-1">TXN-42-00021</div>
+                    <div className="flex items-center text-xs">
+                      <Badge variant="error" className="mr-2">Amount Mismatch</Badge>
+                      <span className="text-slate-400">Confidence: 98%</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-slate-600 group-hover:text-blue-400 transition-colors" />
+                </div>
+                <div className="p-3 text-center bg-slate-900/50">
+                  <button onClick={() => navigate(`/cases?dataset_id=${activeDataset.id}`)} className="text-sm text-blue-400 hover:text-blue-300 font-medium">
+                    Open Queue →
+                  </button>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -41,7 +41,12 @@ def run_upload_reconciliation(
             raise HTTPException(status_code=400, detail=f"Error parsing CSV files: {str(e)}")
 
         cases = run_pipeline(l, g, b, amount_tolerance="15.00")
-        investigation_service.set_cases(cases)
+        
+        dataset_id = investigation_service.create_dataset(
+            name="Upload Dataset",
+            source_type="UPLOAD",
+            cases=cases
+        )
         
         total = len(cases)
         classifications = [c.classification for c in cases]
@@ -51,6 +56,7 @@ def run_upload_reconciliation(
         exceptions = total - matched
         
         return PipelineRunResponse(
+            dataset_id=dataset_id,
             total_cases=total,
             matched_cases=matched,
             exceptions_found=exceptions,
@@ -73,8 +79,12 @@ def run_reconciliation():
         # Run pipeline
         cases = run_pipeline(l, g, b, amount_tolerance="15.00")
         
-        # Store in service
-        investigation_service.set_cases(cases)
+        # Store in database
+        dataset_id = investigation_service.create_dataset(
+            name="Demo Training Dataset",
+            source_type="TRAINING",
+            cases=cases
+        )
         
         # Compute stats
         total = len(cases)
@@ -85,6 +95,7 @@ def run_reconciliation():
         exceptions = total - matched
         
         return PipelineRunResponse(
+            dataset_id=dataset_id,
             total_cases=total,
             matched_cases=matched,
             exceptions_found=exceptions,

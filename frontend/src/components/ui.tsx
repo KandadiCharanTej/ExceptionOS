@@ -3,7 +3,7 @@ import { cn } from '../App';
 
 export function Card({ className, children }: { className?: string, children: React.ReactNode }) {
   return (
-    <div className={cn("bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden", className)}>
+    <div className={cn("bg-card rounded-xl border border-border shadow-sm overflow-hidden", className)}>
       {children}
     </div>
   );
@@ -11,7 +11,7 @@ export function Card({ className, children }: { className?: string, children: Re
 
 export function CardHeader({ className, children }: { className?: string, children: React.ReactNode }) {
   return (
-    <div className={cn("px-6 py-5 border-b border-slate-100", className)}>
+    <div className={cn("px-6 py-5 border-b border-border bg-slate-900/20", className)}>
       {children}
     </div>
   );
@@ -19,7 +19,7 @@ export function CardHeader({ className, children }: { className?: string, childr
 
 export function CardTitle({ className, children }: { className?: string, children: React.ReactNode }) {
   return (
-    <h3 className={cn("text-lg font-semibold text-slate-900 tracking-tight", className)}>
+    <h3 className={cn("text-lg font-semibold text-card-foreground tracking-tight", className)}>
       {children}
     </h3>
   );
@@ -27,7 +27,7 @@ export function CardTitle({ className, children }: { className?: string, childre
 
 export function CardContent({ className, children }: { className?: string, children: React.ReactNode }) {
   return (
-    <div className={cn("p-6", className)}>
+    <div className={cn("p-6 text-card-foreground", className)}>
       {children}
     </div>
   );
@@ -43,12 +43,12 @@ export function Badge({
   className?: string 
 }) {
   const variants = {
-    default: "bg-blue-100 text-blue-700",
-    success: "bg-emerald-100 text-emerald-700",
-    warning: "bg-amber-100 text-amber-700",
-    error: "bg-red-100 text-red-700",
-    secondary: "bg-slate-100 text-slate-700",
-    outline: "border border-slate-200 text-slate-700 bg-transparent"
+    default: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+    success: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+    warning: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+    error: "bg-red-500/10 text-red-400 border border-red-500/20",
+    secondary: "bg-slate-800 text-slate-300 border border-slate-700",
+    outline: "border border-border text-foreground bg-transparent"
   };
   
   return (

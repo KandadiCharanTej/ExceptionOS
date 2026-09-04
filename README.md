@@ -1,128 +1,112 @@
-<div align="center">
-
 # ExceptionOS
 
-**A deterministic payment reconciliation engine and CLI — match transactions across
-processors, gateways, and your internal ledger, and surface every discrepancy.**
+**Next-Generation 3-Way Payment Reconciliation Engine**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/python-3.9%2B-2563eb)
-![No dependencies](https://img.shields.io/badge/dependencies-zero-7c3aed)
-![Typed](https://img.shields.io/badge/typed-yes-16a34a)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
-🌐 **Website:** https://kandadicharantej.github.io/exceptionos/
-
-</div>
+ExceptionOS is a deterministic, dependency-free reconciliation engine designed for modern financial systems. It unifies transactions across three crucial layers — your **Internal Ledger**, your **Payment Gateway**, and your **Bank Settlements** — surfacing exceptions before they hit the books.
 
 ---
 
-Reconciliation is the chore every payments team dreads: does the money the processor
-says it moved actually match what your ledger recorded? ExceptionOS answers that in one
-command — pairing transactions, flagging fee/amount differences, and listing exactly
-what's missing on each side.
+## 🚀 Key Features
 
-- **Two-phase matching** — exact match on a shared id/reference, then a heuristic pass
-  on the leftovers by amount + currency + a date window.
-- **Built for money** — every amount is a `Decimal`, never a float.
-- **Finds the four things that matter** — clean matches, amount mismatches (fees / wrong
-  amounts), settlements missing from the processor, and charges missing from your ledger.
-- **Zero dependencies** — pure Python standard library. Library *and* CLI.
-- **CI-friendly** — exits non-zero when discrepancies exist.
+- **True 3-Way Reconciliation:** Matches transactions sequentially (`Ledger ↔ Gateway ↔ Bank`) to provide a unified `UnifiedCase` view of the entire money lifecycle.
+- **7 Exception Classifications:** Automatically flags cases as: `matched`, `amount_mismatch` (fees), `missing`, `duplicate`, `timing_issue`, `date_mismatch`, or `unresolved/unknown`.
+- **Heuristic Fallbacks:** When IDs don't match exactly, the engine uses precise currency, amount, and date-window tolerances to pair up orphaned transactions.
+- **Decimal-Precise:** Built entirely on Python's `Decimal`. Zero floating-point rounding errors.
+- **Built-in Synthetic Data Engine:** Includes a deterministic generator to create vast training/testing datasets injected with specific edge cases.
 
-## Install
+---
+
+## 🏗️ Architecture Flow
+
+```text
+  [ Internal Ledger ]
+          ↓
+  [ Payment Gateway ]  ← Phase 1 Reconciliation
+          ↓
+  [ Bank Settlement ]  ← Phase 2 Reconciliation
+          ↓
+  { ExceptionOS Pipeline }
+          ↓
+ [ 7-Category Classification ]
+```
+
+---
+
+## 🧪 The Synthetic Data Engine
+
+To test your integration or train machine learning models, ExceptionOS ships with a deterministic dataset generator. It creates extremely realistic financial ledgers injected with 8 specific edge cases (refunds, missing payments, delays, and gateway fees).
+
+### Generating Data
+
+Once installed (`pip install -e .`), you can generate the dataset from your terminal:
 
 ```bash
-pip install exceptionos          # once published to PyPI
-# or, from a checkout:
-pip install -e .
+exceptionos-generate --train 500 --test 200
 ```
 
-## Quick start
-
-```bash
-exceptionos reconcile --left examples/ledger.csv --right examples/processor.csv --csv exceptions.csv
+**What it produces:**
+```text
+data/
+├── train/
+│   ├── ledger.csv
+│   ├── gateway.csv
+│   ├── bank.csv
+│   └── ground_truth.json  <-- Holds exact classification and root cause
+└── test/
+    ├── ledger.csv
+    ...
 ```
 
-```
-  ExceptionOS — reconciliation summary
-  ------------------------------------------
-  matched                   3
-  amount mismatches         1   (1.00)
-  in ledger only            1   (15.00)
-  in processor only         1   (310.00)
-  ------------------------------------------
-  status               EXCEPTIONS FOUND
-```
+---
 
-`exceptions.csv`:
+## 💻 API Usage
 
-| type | key | left_amount | right_amount | delta |
-|------|-----|-------------|--------------|-------|
-| amount_mismatch | L1003 | 200.00 | 199.00 | 1.00 |
-| unmatched_left | L1005 | 15.00 | | |
-| unmatched_right | PROC-90 | | 310.00 | |
-
-Columns are auto-detected (`id`/`reference`, `amount`/`gross`, `currency`/`ccy`,
-`date`/`created`, …), so most processor and ledger exports work out of the box.
-
-### Options
-
-| Flag | Meaning |
-|------|---------|
-| `--amount-tolerance 0.01` | treat tiny amount differences as a match |
-| `--date-window 3` | max day gap for heuristic matches (default 3) |
-| `--no-keys` | ignore ids; match on amount + date only |
-| `--json report.json` | full structured report |
-| `--csv exceptions.csv` | discrepancies as CSV |
-
-### Processor presets
-
-Real processor exports use their own column names. Presets map them for you, with a
-graceful fallback to auto-detection for any column a preset doesn't cover:
-
-```bash
-exceptionos reconcile --left ledger.csv --right stripe_payouts.csv --right-preset stripe
-exceptionos presets        # list all available presets
-```
-
-Built-in presets: `stripe`, `adyen`, `paypal`, `razorpay`, `braintree`, `square`.
-(Report formats vary by processor and report type — override with an explicit mapping
-when needed.)
-
-## Use as a library
+ExceptionOS is built as a highly embeddable Python API. Drop it into your Airflow DAGs, ETL jobs, or internal dashboards instantly.
 
 ```python
-from exceptionos import load_csv, reconcile, summarize
+from exceptionos.loaders import load_csv
+from exceptionos.pipeline.unified import run_pipeline, report_pipeline
 
-left = load_csv("ledger.csv", source="ledger")
-right = load_csv("processor.csv", source="processor")
+# 1. Load your 3 sources
+ledger = load_csv("ledger.csv")
+gateway = load_csv("gateway.csv")
+bank = load_csv("bank.csv")
 
-result = reconcile(left, right, amount_tolerance="0.01", date_window_days=2)
+# 2. Run the 3-Way Pipeline
+# amount_tolerance absorbs minor gateway fees if needed
+cases = run_pipeline(ledger, gateway, bank, amount_tolerance="15.00", date_window=3)
 
-print(summarize(result))
-for m in result.mismatches:
-    print(m.left.key, m.amount_delta)        # fee / wrong-amount deltas
-for t in result.unmatched_right:
-    print("unrecorded:", t.key, t.amount)    # money the processor moved but you never logged
+# 3. Print the intelligent summary
+print(report_pipeline(cases))
+
+# 4. Programmatic access to exceptions
+for case in cases:
+    if case.classification == "amount_mismatch":
+        print(f"Fee detected on {case.key}: Ledger {case.ledger_txn.amount} vs Gateway {case.gateway_txn.amount}")
 ```
 
-## How matching works
+---
 
-1. **Phase A — key match.** Transactions sharing an id/reference are paired. If the
-   amounts differ by more than the tolerance, it's reported as an `amount_mismatch`
-   with the exact delta (typically a processing fee or a wrong amount).
-2. **Phase B — heuristic match.** Remaining transactions are paired by currency and
-   amount (within tolerance) and the **closest** date inside the window.
-3. **Leftovers** become `unmatched_left` (in your ledger, missing from the processor)
-   and `unmatched_right` (in the processor, never recorded by you).
+## 🛠️ Testing
 
-## Develop
+The engine is heavily tested. The test suite ensures the original OpenRecon 2-way engine remains intact while testing the new ExceptionOS 3-way pipeline.
 
 ```bash
-python tests/test_matching.py     # no pytest needed
-# or: pytest
+# Run original 2-way engine tests
+python tests/test_matching.py
+python tests/test_presets.py
+
+# Run ExceptionOS 3-way pipeline tests
+python -m unittest tests/test_pipeline.py
 ```
 
-## License
+---
 
-[MIT](LICENSE) © 2026 Kandadi Charan Tej
+## 👨‍💻 Author & License
+
+Built and maintained by **Kandadi Charan Tej**.
+
+ExceptionOS is released under the **MIT License**. It is completely open-source, and all data processing happens locally on your machine.

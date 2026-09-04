@@ -18,3 +18,18 @@ venv/
 # Local outputs
 exceptions.csv
 report.json
+/data/
+
+# Environment variables
+.env
+.env.*
+
+# Node
+frontend/node_modules/
+node_modules/
+
+# Build files
+frontend/dist/
+
+# Logs
+*.log

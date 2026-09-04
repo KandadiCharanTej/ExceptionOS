@@ -3,26 +3,33 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>OpenRecon — Payment reconciliation engine &amp; CLI</title>
-<meta name="description" content="OpenRecon is a free, open-source, dependency-free payment reconciliation engine and CLI. Match transactions across processors, gateways, and your ledger, and surface every fee mismatch, missing settlement, and unrecorded charge. Decimal-precise and deterministic." />
-<meta property="og:title" content="OpenRecon — Payment reconciliation engine & CLI" />
-<meta property="og:description" content="Match transactions across processors, gateways, and your ledger. Find fee mismatches, missing settlements, and unrecorded charges in one command." />
+<title>ExceptionOS — Next-Gen 3-Way Payment Reconciliation</title>
+<meta name="description" content="ExceptionOS is a premium, open-source 3-way payment reconciliation engine. Unify Ledger, Gateway, and Bank data seamlessly." />
+<meta property="og:title" content="ExceptionOS — 3-Way Payment Reconciliation" />
+<meta property="og:description" content="Match transactions across your Ledger, Gateway, and Bank. Find fee mismatches, missing settlements, and unrecorded charges automatically." />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://naresh-paturi-community.github.io/openrecon/" />
+<meta property="og:url" content="https://github.com/KandadiCharanTej/ExceptionOS" />
 <link rel="stylesheet" href="style.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
+<div class="glow-orb top-left"></div>
+<div class="glow-orb top-right"></div>
+
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><span class="logo">⇄</span> OpenRecon</a>
+    <a class="brand" href="#top">
+      <div class="logo-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      </div>
+      ExceptionOS
+    </a>
     <nav class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#presets">Presets</a>
-      <a href="#how">How it works</a>
-      <a href="#faq">FAQ</a>
-      <a href="#install">Install</a>
-      <a class="btn" href="https://github.com/Naresh-Paturi-Community/openrecon">GitHub ↗</a>
+      <a href="#features">Architecture</a>
+      <a href="#pipeline">3-Way Pipeline</a>
+      <a href="#dataset">Data Engine</a>
+      <a class="btn primary glass" href="https://github.com/KandadiCharanTej/ExceptionOS">GitHub <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
     </nav>
   </div>
 </header>
@@ -32,263 +39,129 @@
 <!-- HERO -->
 <section class="hero">
   <div class="wrap">
-    <span class="pill">Free &amp; open source · Python · Zero dependencies</span>
-    <h1>Reconcile payments<br><span class="grad">in one command</span></h1>
+    <div class="badge-wrap">
+      <span class="pill glass-pill">✨ Phase 3 Released: The 3-Way Pipeline is Live</span>
+    </div>
+    <h1>Intelligent Reconciliation<br><span class="grad-text">for Modern Finance</span></h1>
     <p class="lead">
-      OpenRecon matches transactions across your processor, gateway, and internal ledger —
-      then tells you exactly what doesn't line up: fee mismatches, missing settlements, and
-      charges you never recorded.
+      ExceptionOS is a deterministic, 3-way reconciliation engine. Unify transactions across your 
+      <strong>Ledger</strong>, <strong>Gateway</strong>, and <strong>Bank</strong> seamlessly. 
+      Catch fee drift, timing issues, and missing settlements instantly.
     </p>
     <div class="cta">
-      <a class="btn lg" href="https://github.com/Naresh-Paturi-Community/openrecon">Get it on GitHub</a>
-      <a class="btn lg ghost" href="#install">Install</a>
+      <a class="btn lg primary" href="https://github.com/KandadiCharanTej/ExceptionOS">View on GitHub</a>
+      <a class="btn lg secondary" href="#pipeline">Explore Architecture</a>
     </div>
-    <p class="subnote"><b>Decimal-precise. Deterministic. CI-friendly.</b> No SaaS, no upload — your data stays local.</p>
 
-    <div class="terminal">
-      <div class="bar"><i></i><i></i><i></i><span>openrecon</span></div>
-<pre><span class="p">$</span> openrecon reconcile <span class="f">--left</span> ledger.csv <span class="f">--right</span> processor.csv
+    <div class="terminal glass-panel mt-5">
+      <div class="bar"><i></i><i></i><i></i><span class="title">exceptionos-pipeline</span></div>
+<pre>
+<span class="prompt">~</span> <span class="cmd">python -c "from exceptionos.pipeline.unified import run_pipeline..."</span>
 
-  OpenRecon — reconciliation summary
+  ExceptionOS 3-Way Pipeline Summary
   ------------------------------------------
-  matched                   <span class="g">3</span>
-  amount mismatches         <span class="w">1</span>   (1.00)
-  in ledger only            <span class="w">1</span>   (15.00)
-  in processor only         <span class="w">1</span>   (310.00)
+  Total Cases             <span class="num">532</span>
+  Matched Cases           <span class="num-matched">117</span>
+  Exceptions Found        <span class="num-err">415</span>
   ------------------------------------------
-  status               <span class="r">EXCEPTIONS FOUND</span>
+  amount_mismatch          64
+  date_mismatch            65
+  duplicate               132
+  missing                  28
+  timing_issue             62
+  unresolved/unknown       64
 </pre>
     </div>
   </div>
 </section>
 
-<!-- STATS -->
-<section style="padding-top:24px">
-  <div class="wrap stats">
-    <div><div class="num">4</div><div class="lbl">exception types detected</div></div>
-    <div><div class="num">6</div><div class="lbl">processor presets</div></div>
-    <div><div class="num">0</div><div class="lbl">dependencies</div></div>
-    <div><div class="num">MIT</div><div class="lbl">open-source license</div></div>
-  </div>
-</section>
-
-<!-- FEATURES -->
-<section id="features" class="alt">
+<!-- PIPELINE -->
+<section id="pipeline" class="section-darker relative">
+  <div class="glow-orb center-mid"></div>
   <div class="wrap">
-    <p class="eyebrow">Why OpenRecon</p>
-    <h2 class="title">Reconciliation that just works</h2>
-    <p class="sub">Point it at two CSVs and get a clear, auditable answer — as a CLI or a Python library.</p>
-    <div class="grid">
-      <div class="card"><div class="ic">🔑</div><h3>Two-phase matching</h3><p>Exact match on a shared id or reference, then a heuristic pass on the leftovers by amount, currency, and date window.</p></div>
-      <div class="card"><div class="ic">💸</div><h3>Catches fee &amp; amount drift</h3><p>When ids match but amounts don't, the exact delta is reported — the processing fee or the error, made visible.</p></div>
-      <div class="card"><div class="ic">🧾</div><h3>Both sides of the gap</h3><p>Settlements missing from the processor and charges missing from your ledger are listed separately.</p></div>
-      <div class="card"><div class="ic">🎯</div><h3>Decimal-precise</h3><p>Every amount is a <code>Decimal</code> — never a float. No rounding surprises on money.</p></div>
-      <div class="card"><div class="ic">🤖</div><h3>CI-friendly</h3><p>Exits non-zero when discrepancies exist, so a nightly job can fail the build on a broken settlement.</p></div>
-      <div class="card"><div class="ic">📦</div><h3>Zero dependencies</h3><p>Pure Python standard library. Auto-detects common column names across processor exports.</p></div>
+    <p class="eyebrow">The Engine</p>
+    <h2 class="title">3-Way Reconciliation Pipeline</h2>
+    <p class="sub">ExceptionOS doesn't just do A to B. It bridges the entire financial lifecycle.</p>
+    
+    <div class="flow-diagram glass-panel">
+      <div class="flow-step">
+        <div class="icon-box">📓</div>
+        <h3>1. Ledger</h3>
+        <p>Your internal system of truth.</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="icon-box">💳</div>
+        <h3>2. Gateway</h3>
+        <p>Stripe, Razorpay, Adyen, etc.</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="icon-box">🏦</div>
+        <h3>3. Bank</h3>
+        <p>Final settlement records.</p>
+      </div>
+    </div>
+    <div class="features-grid mt-4">
+      <div class="glass-card">
+        <h3><span class="emoji">🎯</span> 7 Exception Classifications</h3>
+        <p>Automatically flags matched, amount mismatches (fees), missing, duplicates, timing issues, date mismatches, and unknowns.</p>
+      </div>
+      <div class="glass-card">
+        <h3><span class="emoji">🧠</span> Heuristic Matching</h3>
+        <p>If IDs are missing, ExceptionOS falls back to advanced matching based on amounts, currencies, and smart date windows.</p>
+      </div>
+      <div class="glass-card">
+        <h3><span class="emoji">🛡️</span> Zero Rounding Errors</h3>
+        <p>Built entirely on Python's <code>Decimal</code>. Never loses a cent to floating-point drift.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- PRESETS (split) -->
-<section id="presets">
+<!-- DATASET GENERATOR -->
+<section id="dataset">
   <div class="wrap split">
     <div>
-      <p class="eyebrow" style="text-align:left">Processor presets</p>
-      <h3>Every processor, one vocabulary</h3>
-      <p>Stripe calls it <code>gross</code>, PayPal calls it <code>Gross</code>, Adyen calls it
-      <code>Gross Credit (GC)</code>. Presets map them all — and fall back to auto-detection
-      for anything a preset doesn't cover, so variant exports still resolve.</p>
-      <ul>
-        <li>Built in: Stripe, Adyen, PayPal, Razorpay, Braintree, Square</li>
-        <li>Graceful fallback to column auto-detection</li>
-        <li>Override with an explicit mapping anytime</li>
+      <p class="eyebrow">Data Engine</p>
+      <h2 class="title" style="text-align: left;">Synthetic Financial Data Generation</h2>
+      <p>Need to test your systems? ExceptionOS ships with a built-in deterministic data generator.</p>
+      <ul class="feature-list">
+        <li>Generates realistic Ledger, Gateway, and Bank CSVs.</li>
+        <li>Injects 8 distinct edge cases (refunds, fees, delays).</li>
+        <li>Outputs a <code>ground_truth.json</code> file for ML training.</li>
+        <li>Creates strict <code>train</code> and <code>test</code> dataset splits.</li>
       </ul>
+      <div class="mt-3">
+        <code class="inline-code">$ exceptionos-generate --train 500 --test 200</code>
+      </div>
     </div>
-    <div class="codecard">
-<span class="c"># reconcile a ledger against a Stripe payout export</span><br>
-$ openrecon reconcile \<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">--left</span> ledger.csv \<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">--right</span> stripe_payouts.csv <span class="f">--right-preset</span> stripe<br><br>
-<span class="c"># list every preset</span><br>
-$ openrecon presets<br>
-&nbsp;&nbsp;stripe&nbsp;&nbsp;&nbsp;&nbsp;key=charge_id, amount=gross, …<br>
-&nbsp;&nbsp;paypal&nbsp;&nbsp;&nbsp;&nbsp;key=Transaction ID, amount=Gross, …<br>
-&nbsp;&nbsp;adyen&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key=Merchant Reference, …
+    <div class="glass-card code-showcase">
+      <div class="bar"><i></i><i></i><i></i></div>
+<pre>
+<span class="c">// ground_truth.json snippet</span>
+{
+  <span class="k">"transaction_id"</span>: <span class="s">"TXN-42-00001"</span>,
+  <span class="k">"scenario_type"</span>: <span class="s">"gateway_fee"</span>,
+  <span class="k">"expected_status"</span>: <span class="s">"amount_mismatch"</span>,
+  <span class="k">"actual_root_cause"</span>: <span class="s">"Gateway deducted processing fee"</span>,
+  <span class="k">"expected_resolution"</span>: <span class="s">"Automated handling"</span>
+}
+</pre>
     </div>
-  </div>
-</section>
-
-<!-- LIBRARY (split) -->
-<section class="alt">
-  <div class="wrap split">
-    <div class="codecard">
-<span class="k">from</span> openrecon <span class="k">import</span> load_csv, reconcile<br><br>
-left&nbsp;&nbsp;= load_csv(<span class="s">"ledger.csv"</span>)<br>
-right = load_csv(<span class="s">"processor.csv"</span>, preset=<span class="s">"stripe"</span>)<br><br>
-result = reconcile(left, right,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;amount_tolerance=<span class="s">"0.01"</span>,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;date_window_days=<span class="s">2</span>)<br><br>
-<span class="k">for</span> m <span class="k">in</span> result.mismatches:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;print(m.left.key, m.amount_delta)&nbsp;&nbsp;<span class="c"># fees</span><br>
-<span class="k">for</span> t <span class="k">in</span> result.unmatched_right:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;print(<span class="s">"unrecorded:"</span>, t.amount)
-    </div>
-    <div>
-      <p class="eyebrow" style="text-align:left">Library API</p>
-      <h3>Drop it into your stack</h3>
-      <p>OpenRecon is a clean Python API, not just a CLI. Embed reconciliation inside ETL
-      jobs, internal dashboards, or scheduled tasks — and get back structured results you
-      can act on programmatically.</p>
-      <ul>
-        <li>Typed <code>Result</code> with matches, mismatches, and both unmatched sides</li>
-        <li>Configurable amount tolerance and date window</li>
-        <li>Export to JSON or CSV for downstream tooling</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- HOW -->
-<section id="how">
-  <div class="wrap">
-    <p class="eyebrow">How it works</p>
-    <h2 class="title">From two CSVs to a clean answer</h2>
-    <p class="sub">Deterministic, explainable, and easy to audit.</p>
-    <div class="steps">
-      <div class="step"><div class="n"></div><div><h3>Load &amp; normalize</h3><p>Both files are parsed into normalized transactions; columns like <code>reference</code>, <code>gross</code>, and <code>created</code> are auto-detected (or mapped by a preset).</p></div></div>
-      <div class="step"><div class="n"></div><div><h3>Phase A — key match</h3><p>Transactions sharing an id/reference are paired. Amount differences beyond your tolerance become flagged mismatches with the exact delta.</p></div></div>
-      <div class="step"><div class="n"></div><div><h3>Phase B — heuristic match</h3><p>Remaining rows are paired by currency and amount within tolerance, choosing the closest date inside the window.</p></div></div>
-      <div class="step"><div class="n"></div><div><h3>Report exceptions</h3><p>A console summary plus optional JSON/CSV of every discrepancy — matched, mismatched, and missing on each side.</p></div></div>
-    </div>
-  </div>
-</section>
-
-<!-- USE CASES -->
-<section id="use-cases" class="alt">
-  <div class="wrap">
-    <p class="eyebrow">Who it's for</p>
-    <h2 class="title">Built for payments teams</h2>
-    <p class="sub">Anywhere money moves through more than one system.</p>
-    <div class="grid">
-      <div class="card"><div class="ic">🏦</div><h3>Processor settlements</h3><p>Reconcile Stripe / Adyen / PayPal / Razorpay payout reports against your order ledger.</p></div>
-      <div class="card"><div class="ic">📒</div><h3>Finance &amp; accounting</h3><p>Catch fee drift and unrecorded refunds before they reach the books or an audit.</p></div>
-      <div class="card"><div class="ic">🛠️</div><h3>Engineering &amp; ops</h3><p>Run it nightly in CI; fail the build the moment a settlement doesn't balance.</p></div>
-      <div class="card"><div class="ic">🏪</div><h3>Marketplaces</h3><p>Match split payouts and connected-account transfers back to internal records.</p></div>
-      <div class="card"><div class="ic">🔍</div><h3>Audit &amp; compliance</h3><p>Produce a deterministic, timestamped exception report for every period.</p></div>
-      <div class="card"><div class="ic">🧑‍💻</div><h3>Embedded in your stack</h3><p>Use the Python API directly inside ETL jobs, dashboards, or internal tools.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- COMPARISON -->
-<section id="compare">
-  <div class="wrap">
-    <p class="eyebrow">How it compares</p>
-    <h2 class="title">Why not a spreadsheet or a SaaS?</h2>
-    <p class="sub">OpenRecon sits between a brittle manual process and a heavy paid platform.</p>
-    <table class="cmp">
-      <colgroup><col><col class="hl"><col><col></colgroup>
-      <thead><tr><th>Capability</th><th class="hl">OpenRecon</th><th>Spreadsheet / manual</th><th>SaaS platform</th></tr></thead>
-      <tbody>
-        <tr><td>Deterministic, repeatable matching</td><td class="hl y">✓</td><td class="n">✕</td><td class="y">✓</td></tr>
-        <tr><td>Decimal-precise money (no float drift)</td><td class="hl y">✓</td><td class="p">risky</td><td class="y">✓</td></tr>
-        <tr><td>Runs in CI / automatable</td><td class="hl y">✓</td><td class="n">✕</td><td class="p">varies</td></tr>
-        <tr><td>Data stays on your machine</td><td class="hl y">✓</td><td class="y">✓</td><td class="n">✕</td></tr>
-        <tr><td>Free &amp; open source</td><td class="hl y">✓</td><td class="y">✓</td><td class="n">✕</td></tr>
-        <tr><td>Embeddable Python API</td><td class="hl y">✓</td><td class="n">✕</td><td class="p">API tier</td></tr>
-        <tr><td>Zero setup / no account</td><td class="hl y">✓</td><td class="y">✓</td><td class="n">✕</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<!-- SPECS -->
-<section id="specs" class="alt">
-  <div class="wrap">
-    <p class="eyebrow">At a glance</p>
-    <h2 class="title">Specifications</h2>
-    <p class="sub">Everything you'd want to know before installing.</p>
-    <table class="specs">
-      <tr><th>Version</th><td>0.2.0</td></tr>
-      <tr><th>Language</th><td>Python 3.9+</td></tr>
-      <tr><th>Interface</th><td>CLI (<code>openrecon</code>) and Python library</td></tr>
-      <tr><th>Input</th><td>Two CSV files (ledger + processor report)</td></tr>
-      <tr><th>Matching</th><td>Key match, then heuristic (amount · currency · date window)</td></tr>
-      <tr><th>Outputs</th><td>Console summary, JSON report, exceptions CSV</td></tr>
-      <tr><th>Presets</th><td>Stripe, Adyen, PayPal, Razorpay, Braintree, Square</td></tr>
-      <tr><th>Money</th><td><code>Decimal</code> throughout — never float</td></tr>
-      <tr><th>Dependencies</th><td>None (standard library only)</td></tr>
-      <tr><th>License</th><td>MIT</td></tr>
-      <tr><th>Source</th><td><a href="https://github.com/Naresh-Paturi-Community/openrecon">github.com/Naresh-Paturi-Community/openrecon</a></td></tr>
-    </table>
-  </div>
-</section>
-
-<!-- INSTALL -->
-<section id="install">
-  <div class="wrap install">
-    <p class="eyebrow">Get started</p>
-    <h2 class="title">Install &amp; run</h2>
-    <p class="sub">Python 3.9+. No other dependencies.</p>
-    <div class="codeblock">
-<span class="c"># install (from PyPI once published, or from a checkout)</span><br>
-pip install openrecon<br><br>
-<span class="c"># reconcile two files and write the exceptions</span><br>
-openrecon reconcile --left ledger.csv --right processor.csv --csv exceptions.csv<br><br>
-<span class="c"># use a processor preset</span><br>
-openrecon reconcile --left ledger.csv --right payouts.csv --right-preset stripe
-    </div>
-    <p style="text-align:center;margin-top:18px"><a class="btn lg" href="https://github.com/Naresh-Paturi-Community/openrecon">View the source on GitHub</a></p>
-  </div>
-</section>
-
-<!-- FAQ -->
-<section id="faq" class="alt">
-  <div class="wrap">
-    <p class="eyebrow">Questions</p>
-    <h2 class="title">Frequently asked</h2>
-    <p class="sub">Short answers to the things people ask most.</p>
-    <div class="faq">
-      <details open><summary>Is OpenRecon free?</summary><p>Yes — free and open source under the MIT license. No paid tier, no account, no SaaS.</p></details>
-      <details><summary>Does my data leave my machine?</summary><p>No. OpenRecon is a local CLI/library with no network calls. Your ledger and processor files never leave your computer.</p></details>
-      <details><summary>What CSV formats does it accept?</summary><p>Any CSV with an amount column. It auto-detects common names (<code>id</code>/<code>reference</code>, <code>amount</code>/<code>gross</code>, <code>currency</code>/<code>ccy</code>, <code>date</code>/<code>created</code>), and ships presets for major processors.</p></details>
-      <details><summary>How are amounts handled?</summary><p>Every value is parsed into a Python <code>Decimal</code> — never a float — so summing thousands of transactions never drifts by a cent.</p></details>
-      <details><summary>Can I use it in CI?</summary><p>Yes. It exits with a non-zero status when discrepancies exist, so a scheduled job can fail the moment a settlement stops balancing.</p></details>
-      <details><summary>What if ids don't match between systems?</summary><p>That's the point of the heuristic phase — transactions without a shared id are matched by currency, amount (within tolerance), and the closest date inside a window.</p></details>
-      <details><summary>My processor isn't in the presets — what now?</summary><p>Auto-detection covers many exports already. Otherwise, pass an explicit column mapping, or open a PR adding a preset for your processor.</p></details>
-    </div>
-  </div>
-</section>
-
-<!-- ROADMAP -->
-<section id="roadmap">
-  <div class="wrap">
-    <p class="eyebrow">What's next</p>
-    <h2 class="title">Roadmap</h2>
-    <p class="sub">Planned improvements — contributions and ideas welcome on GitHub.</p>
-    <ul class="road">
-      <li><b>Many-to-one matching</b> — reconcile a single payout against the batch of charges it settles.</li>
-      <li><b>Multi-currency settlement</b> — handle FX conversion between presentment and settlement amounts.</li>
-      <li><b>More presets</b> — additional processors and report types, contributed by the community.</li>
-      <li><b>Refund &amp; chargeback awareness</b> — first-class handling of negative and reversed transactions.</li>
-      <li><b>HTML report</b> — a shareable, human-readable reconciliation report.</li>
-      <li><b>PyPI release</b> — <code>pip install openrecon</code> for one-line setup.</li>
-    </ul>
   </div>
 </section>
 
 <!-- AUTHOR -->
-<section id="author" class="alt">
+<section id="author" class="section-darker">
   <div class="wrap">
-    <p class="eyebrow">Author</p>
-    <h2 class="title">Built &amp; maintained by Naresh Paturi</h2>
-    <div class="author">
-      <div class="av">NP</div>
+    <div class="author-card glass-panel">
+      <div class="av">KC</div>
       <div>
-        <h3>Naresh Paturi</h3>
-        <p>Payments &amp; fintech engineer. OpenRecon is an open-source reconciliation engine built
-        from first principles — deterministic, Decimal-precise, and dependency-free. Source and
-        issues on <a href="https://github.com/Naresh-Paturi-Community/openrecon">GitHub</a>.</p>
+        <p class="eyebrow" style="text-align:left; margin-bottom: 4px;">Architect & Maintainer</p>
+        <h3>Kandadi Charan Tej</h3>
+        <p>ExceptionOS is an advanced open-source reconciliation and exception handling engine built for modern fintechs.</p>
+        <a href="https://github.com/KandadiCharanTej" class="link-btn mt-2">View GitHub Profile ↗</a>
       </div>
     </div>
   </div>
@@ -298,10 +171,10 @@ openrecon reconcile --left ledger.csv --right payouts.csv --right-preset stripe
 
 <footer>
   <div class="wrap">
-    <div>© <span id="yr">2026</span> OpenRecon · Built by Naresh Paturi · MIT License</div>
-    <div>
-      <a href="https://github.com/Naresh-Paturi-Community/openrecon">GitHub</a> ·
-      <a href="https://github.com/Naresh-Paturi-Community/openrecon/blob/main/LICENSE">License</a>
+    <div>© <span id="yr">2026</span> ExceptionOS · Built by Kandadi Charan Tej · MIT License</div>
+    <div class="footer-links">
+      <a href="https://github.com/KandadiCharanTej/ExceptionOS">GitHub Repository</a>
+      <a href="https://github.com/KandadiCharanTej/ExceptionOS/blob/main/LICENSE">License</a>
     </div>
   </div>
 </footer>

@@ -8,8 +8,13 @@ version = "0.2.0"
 description = "Deterministic payment reconciliation engine and CLI — match transactions across processors, gateways, and your ledger."
 readme = "README.md"
 requires-python = ">=3.9"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic"
+]
 license = { text = "MIT" }
-authors = [{ name = "Kandadi Charan Tej", email = "kandadi.charan.tej@example.com" }]
+authors = [{ name = "Kandadi Charan Tej", email = "kandadicharantej21@gmail.com" }]
 keywords = ["payments", "fintech", "reconciliation", "ledger", "accounting", "stripe", "finance", "settlement"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -28,6 +33,7 @@ Issues = "https://github.com/KandadiCharanTej/ExceptionOS/issues"
 
 [project.scripts]
 exceptionos = "exceptionos.cli:main"
+exceptionos-generate = "exceptionos.data_generator.generator:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/exceptionos"]

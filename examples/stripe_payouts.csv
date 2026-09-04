@@ -1,0 +1,5 @@
+balance_transaction_id,charge_id,created,gross,fee,net,currency,reporting_category
+txn_1Kd1,L1001,2026-06-01,120.00,3.78,116.22,usd,charge
+txn_1Kd2,L1002,2026-06-01,75.50,2.49,73.01,usd,charge
+txn_1Kd3,L1003,2026-06-02,200.00,5.97,194.03,usd,charge
+txn_1Kd4,L1004,2026-06-03,49.99,1.75,48.24,usd,charge

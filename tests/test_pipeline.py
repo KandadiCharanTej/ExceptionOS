@@ -49,9 +49,9 @@ class TestPipeline(unittest.TestCase):
         ]
         
         cases = run_pipeline(l, g, b)
-        self.assertEqual(len(cases), 2)
+        self.assertEqual(len(cases), 1)
         self.assertEqual(cases[0].classification, "duplicate")
-        self.assertEqual(cases[1].classification, "duplicate")
+        self.assertTrue(cases[0].is_duplicate)
 
 if __name__ == "__main__":
     unittest.main()

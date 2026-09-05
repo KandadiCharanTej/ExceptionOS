@@ -56,6 +56,29 @@ def generate_hypotheses(case: UnifiedCase, timeline: EvidenceTimeline) -> List[H
             explanation="The gateway likely deducted a processing fee before settlement."
         ))
 
+    # 1b. Settlement Amount Discrepancy
+    settle_score = 0
+    settle_evidence = []
+    if has_ledger and has_gateway and has_bank:
+        if amount_mismatch:
+            settle_score += 45
+            settle_evidence.append("An amount discrepancy was detected between systems.")
+            if case.ledger_txn.amount == case.gateway_txn.amount and case.bank_txn.amount != case.gateway_txn.amount:
+                settle_score += 45
+                diff = abs(case.bank_txn.amount - case.gateway_txn.amount)
+                settle_evidence.append(f"Ledger and Gateway amounts agree, but Bank settlement differs by {diff}.")
+            elif case.ledger_txn.amount != case.gateway_txn.amount or case.bank_txn.amount != case.ledger_txn.amount:
+                settle_score += 35
+                settle_evidence.append("Financial amounts differ across recording systems.")
+                
+    if settle_score > 0:
+        hypotheses.append(Hypothesis(
+            hypothesis_type="settlement_amount_discrepancy",
+            confidence_score=settle_score,
+            evidence=settle_evidence,
+            explanation="The transaction settled at the bank with an amount difference relative to internal records."
+        ))
+
     # 2. Delayed Settlement Hypothesis
     delayed_score = 0
     delayed_evidence = []

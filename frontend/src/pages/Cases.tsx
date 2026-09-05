@@ -180,15 +180,14 @@ export default function Cases() {
               onChange={(e) => updateState({ classification: e.target.value, page: 1 })}
               className="bg-white border border-slate-200 text-slate-900 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
             >
-              <option value="">All Classifications</option>
+              <option value="exceptions">Actionable Exceptions Only</option>
+              <option value="">All Cases (incl. Matched)</option>
               <option value="matched">Matched</option>
-              <option value="missing_in_ledger">Missing in Ledger</option>
-              <option value="missing_in_gateway">Missing in Gateway</option>
-              <option value="missing_in_bank">Missing in Bank</option>
               <option value="amount_mismatch">Amount Mismatch</option>
               <option value="date_mismatch">Date Mismatch</option>
-              <option value="duplicate_detected">Duplicate</option>
-              <option value="system_error">System Error</option>
+              <option value="timing_issue">Timing Issue</option>
+              <option value="missing">Missing</option>
+              <option value="duplicate">Duplicate</option>
             </select>
             
             <select 

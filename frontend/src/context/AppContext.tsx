@@ -36,7 +36,7 @@ interface AppContextType {
 const DEFAULT_CASES_STATE: CasesState = {
   page: 1,
   searchQuery: '',
-  classification: '',
+  classification: 'exceptions',
   status: '',
   sortBy: 'confidence_score',
   sortOrder: 'desc',

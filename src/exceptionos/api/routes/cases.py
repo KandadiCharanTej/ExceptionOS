@@ -127,7 +127,10 @@ def list_cases(
     # Apply filters
     filtered = summaries
     if classification:
-        filtered = [s for s in filtered if s.classification == classification]
+        if classification in ("exceptions", "actionable_exceptions"):
+            filtered = [s for s in filtered if s.classification != "matched"]
+        else:
+            filtered = [s for s in filtered if s.classification == classification]
     if status:
         filtered = [s for s in filtered if s.status == status]
     if search:

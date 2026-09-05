@@ -50,5 +50,40 @@ class TestAPI(unittest.TestCase):
         res = self.client.get("/api/cases/INVALID-ID-XYZ")
         self.assertEqual(res.status_code, 404)
 
+    def test_demo_dataset_100_records_reconciliation(self):
+        res = self.client.post("/api/reconcile")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["total_cases"], 100)
+        self.assertEqual(data["matched_cases"], 85)
+        self.assertEqual(data["exceptions_found"], 15)
+        self.assertEqual(data["classification_counts"]["amount_mismatch"], 5)
+        self.assertEqual(data["classification_counts"]["date_mismatch"], 3)
+        self.assertEqual(data["classification_counts"]["timing_issue"], 3)
+        self.assertEqual(data["classification_counts"]["missing"], 2)
+        self.assertEqual(data["classification_counts"]["duplicate"], 2)
+
+        ds_id = data["dataset_id"]
+
+        # Actionable exceptions only in queue
+        res_ex = self.client.get(f"/api/cases?dataset_id={ds_id}&classification=exceptions")
+        self.assertEqual(res_ex.status_code, 200)
+        data_ex = res_ex.json()
+        self.assertEqual(data_ex["total"], 15)
+        for item in data_ex["items"]:
+            self.assertNotEqual(item["classification"], "matched")
+
+        # Evaluation metrics
+        res_eval = self.client.get(f"/api/evaluation/{ds_id}")
+        self.assertEqual(res_eval.status_code, 200)
+        eval_data = res_eval.json()
+        self.assertEqual(eval_data["total_records"], 100)
+        self.assertEqual(eval_data["matched_records"], 85)
+        self.assertEqual(eval_data["exception_records"], 15)
+        self.assertEqual(eval_data["precision"], 100.0)
+        self.assertEqual(eval_data["recall"], 100.0)
+        self.assertEqual(eval_data["accuracy"], 100.0)
+        self.assertEqual(eval_data["f1_score"], 100.0)
+
 if __name__ == "__main__":
     unittest.main()

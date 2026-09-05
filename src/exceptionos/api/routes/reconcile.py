@@ -69,20 +69,25 @@ def run_upload_reconciliation(
 @router.post("/api/reconcile", response_model=PipelineRunResponse)
 def run_reconciliation():
     try:
-        # For prototype, load the train dataset
         from pathlib import Path
         base_dir = Path(__file__).resolve().parents[4]
-        l = load_csv(str(base_dir / "data" / "train" / "ledger.csv"))
-        g = load_csv(str(base_dir / "data" / "train" / "gateway.csv"))
-        b = load_csv(str(base_dir / "data" / "train" / "bank.csv"))
+        demo_dir = base_dir / "data" / "demo"
+        train_dir = base_dir / "data" / "train"
+        data_dir = demo_dir if (demo_dir / "ledger.csv").exists() else train_dir
+        dataset_title = "ExceptionOS Demo Dataset" if data_dir == demo_dir else "Demo Training Dataset"
+        source_type = "DEMO" if data_dir == demo_dir else "TRAINING"
+        
+        l = load_csv(str(data_dir / "ledger.csv"))
+        g = load_csv(str(data_dir / "gateway.csv"))
+        b = load_csv(str(data_dir / "bank.csv"))
         
         # Run pipeline
         cases = run_pipeline(l, g, b, amount_tolerance="15.00")
         
         # Store in database
         dataset_id = investigation_service.create_dataset(
-            name="Demo Training Dataset",
-            source_type="TRAINING",
+            name=dataset_title,
+            source_type=source_type,
             cases=cases
         )
         

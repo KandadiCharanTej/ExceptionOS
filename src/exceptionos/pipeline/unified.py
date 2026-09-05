@@ -19,34 +19,30 @@ class UnifiedCase:
         if self.is_duplicate:
             return "duplicate"
         
-        # Missing
+        # Missing record in any source
         if not self.ledger_txn or not self.gateway_txn or not self.bank_txn:
             return "missing"
             
-        # All three present, check amounts
-        if self.ledger_txn.amount == self.gateway_txn.amount == self.bank_txn.amount:
-            # Check dates
-            if self.ledger_txn.date and self.gateway_txn.date and self.bank_txn.date:
-                # Gateway should closely match ledger date
-                if abs((self.ledger_txn.date - self.gateway_txn.date).days) > 14:
-                    return "date_mismatch"
-                
-                # Bank can be delayed
-                delay = (self.bank_txn.date - self.ledger_txn.date).days
-                if delay > 0 and delay <= 14:
-                    return "timing_issue"
-                elif delay > 14 or delay < -14:
-                    return "date_mismatch"
-                    
-            return "matched"
-            
-        # Amount mismatch logic
-        # Usually gateway takes a fee, so ledger > gateway == bank
-        if self.ledger_txn.amount > self.gateway_txn.amount and self.gateway_txn.amount == self.bank_txn.amount:
+        # Amount mismatch: financial amounts do not reconcile across sources
+        if not (self.ledger_txn.amount == self.gateway_txn.amount == self.bank_txn.amount):
             return "amount_mismatch"
             
-        # Any other mismatch is unknown
-        return "unresolved/unknown"
+        # Amounts reconcile, check transaction and settlement dates
+        if self.ledger_txn.date and self.gateway_txn.date and self.bank_txn.date:
+            # Gateway vs Ledger date mismatch
+            if self.ledger_txn.date != self.gateway_txn.date:
+                return "date_mismatch"
+            
+            # Settlement delay between bank and ledger/gateway
+            delay = (self.bank_txn.date - self.ledger_txn.date).days
+            if delay == 0:
+                return "matched"
+            elif delay == 1:
+                return "timing_issue"  # Standard T+1 settlement timing
+            else:
+                return "date_mismatch"  # Delay > 1 or negative delay
+                
+        return "matched"
 
 
 def run_pipeline(
@@ -77,7 +73,7 @@ def run_pipeline(
         gw_to_bank[id(match.left)] = match.right
         
     all_gw_txns = gateway.copy()
-    cases = []
+    raw_cases = []
     
     # 1. Build cases from Gateway perspective
     for gw in all_gw_txns:
@@ -86,30 +82,49 @@ def run_pipeline(
         
         key = gw.key or (l_txn.key if l_txn else (b_txn.key if b_txn else "unknown"))
         case = UnifiedCase(key=key, ledger_txn=l_txn, gateway_txn=gw, bank_txn=b_txn)
-        cases.append(case)
+        raw_cases.append(case)
         cases_by_key[key].append(case)
         
     # 2. Build cases for unmatched ledger
     for l_txn in res_lg.unmatched_left:
         key = l_txn.key or "unknown"
         case = UnifiedCase(key=key, ledger_txn=l_txn, gateway_txn=None, bank_txn=None)
-        cases.append(case)
+        raw_cases.append(case)
         cases_by_key[key].append(case)
         
     # 3. Build cases for unmatched bank
     for b_txn in res_gb.unmatched_right:
         key = b_txn.key or "unknown"
         case = UnifiedCase(key=key, ledger_txn=None, gateway_txn=None, bank_txn=b_txn)
-        cases.append(case)
+        raw_cases.append(case)
         cases_by_key[key].append(case)
         
-    # 4. Detect duplicates across all cases
-    for key, key_cases in cases_by_key.items():
-        if len(key_cases) > 1 and key != "unknown":
-            for c in key_cases:
-                c.is_duplicate = True
-                
-    return cases
+    # Consolidate cases by unique transaction key so duplicate rows create a duplicate exception
+    # on the unique transaction case rather than inflating the total transaction count.
+    consolidated_cases = []
+    seen_keys = set()
+    for c in raw_cases:
+        if c.key != "unknown":
+            if c.key in seen_keys:
+                continue
+            seen_keys.add(c.key)
+            all_key_cases = cases_by_key[c.key]
+            if len(all_key_cases) > 1:
+                # Duplicate detected for this transaction identity
+                merged = UnifiedCase(
+                    key=c.key,
+                    ledger_txn=next((x.ledger_txn for x in all_key_cases if x.ledger_txn), None),
+                    gateway_txn=next((x.gateway_txn for x in all_key_cases if x.gateway_txn), None),
+                    bank_txn=next((x.bank_txn for x in all_key_cases if x.bank_txn), None),
+                    is_duplicate=True
+                )
+                consolidated_cases.append(merged)
+            else:
+                consolidated_cases.append(c)
+        else:
+            consolidated_cases.append(c)
+            
+    return consolidated_cases
 
 def report_pipeline(cases: List[UnifiedCase]) -> str:
     counts = defaultdict(int)

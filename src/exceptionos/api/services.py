@@ -264,7 +264,10 @@ class InvestigationService:
             if dataset_id:
                 query = query.filter(CaseRecord.dataset_id == dataset_id)
             if classification:
-                query = query.filter(CaseRecord.classification == classification)
+                if classification in ("exceptions", "actionable_exceptions"):
+                    query = query.filter(CaseRecord.classification != "matched")
+                else:
+                    query = query.filter(CaseRecord.classification == classification)
             records = query.all()
 
             if search:

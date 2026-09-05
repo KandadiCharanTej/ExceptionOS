@@ -222,12 +222,14 @@ export default function Investigation() {
                   >
                     <option value="">No Override</option>
                     <option value="matched">Matched (False Positive)</option>
+                    <option value="amount_mismatch">Amount Mismatch</option>
+                    <option value="date_mismatch">Date Mismatch</option>
+                    <option value="timing_issue">Timing Issue</option>
+                    <option value="missing">Missing</option>
+                    <option value="duplicate">Duplicate</option>
                     <option value="missing_in_ledger">Missing in Ledger</option>
                     <option value="missing_in_gateway">Missing in Gateway</option>
                     <option value="missing_in_bank">Missing in Bank</option>
-                    <option value="amount_mismatch">Amount Mismatch</option>
-                    <option value="date_mismatch">Date Mismatch</option>
-                    <option value="duplicate_detected">Duplicate</option>
                     <option value="system_error">System Error</option>
                   </select>
                 ) : (

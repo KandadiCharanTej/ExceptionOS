@@ -102,3 +102,4 @@ def test_demo_orchestration_ai_failure():
             os.environ["GROQ_API_KEY"] = old_groq_key
         else:
             os.environ.pop("GROQ_API_KEY", None)
+

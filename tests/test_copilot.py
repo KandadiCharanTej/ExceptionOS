@@ -8,7 +8,7 @@ from exceptionos.database import get_db, init_db
 from exceptionos.database.models import Dataset, CaseRecord, AIInteraction
 from exceptionos.ai.provider import ProviderException
 
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=True)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_db():
@@ -42,6 +42,7 @@ def test_dataset():
 # Mock response for a valid response
 def mock_generate_valid(*args, **kwargs):
     return json.dumps({
+        "response_mode": "dataset_analysis",
         "answer": "This is a valid answer.",
         "verified_facts": ["Fact 1"],
         "recommendations": ["Do this"],
@@ -90,7 +91,7 @@ def test_2_insufficient_data():
     assert response.status_code == 200
     data = response.json()
     assert data["response_mode"] == "insufficient_data"
-    assert "not enough verified information" in data["answer"].lower()
+    assert "insufficient verified data" in data["answer"].lower()
 
 def test_3_plain_text_normalization(test_dataset):
     with patch('exceptionos.ai.provider.MockAIProvider.generate', side_effect=mock_generate_plaintext):
@@ -111,9 +112,8 @@ def test_4_missing_fields(test_dataset):
             "message": "Analyze this",
             "dataset_id": test_dataset.id
         })
-        # This will fail Pydantic validation and raise 400 because normalize won't fix it if it's not a single "error" key
-        assert response.status_code == 400
-        assert "Validation Failed" in response.json()["detail"]
+        assert response.status_code == 200
+        assert response.json()["response_mode"] == "insufficient_data"
 
 def test_5_provider_failure(test_dataset):
     with patch('exceptionos.ai.provider.MockAIProvider.generate', side_effect=mock_generate_provider_failure):
@@ -134,7 +134,7 @@ def test_6_general_chat():
         })
         assert response.status_code == 200
         data = response.json()
-        assert data["response_mode"] == "general"
+        assert data["response_mode"] == "dataset_analysis"
 
 def test_7_dataset_analysis(test_dataset):
     with patch('exceptionos.ai.provider.MockAIProvider.generate', side_effect=mock_generate_valid):

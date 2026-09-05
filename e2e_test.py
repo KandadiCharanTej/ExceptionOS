@@ -23,7 +23,7 @@ print(f'Total cases: {res_recon.get("total_cases", "ERROR")}')
 
 print('2. Get Cases')
 res_cases = request('GET', '/api/cases?limit=1')
-case_id = res_cases['cases'][0]['case_id']
+case_id = res_cases['items'][0]['case_id']
 print(f'Case: {case_id}')
 
 print('3. Investigate Case')

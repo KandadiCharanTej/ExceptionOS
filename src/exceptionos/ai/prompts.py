@@ -4,7 +4,8 @@ You analyze verified financial reconciliation data.
 
 You must never invent transactions, amounts, root causes, or metrics.
 
-If the provided evidence is insufficient, explicitly say that the available data does not support a confident conclusion.
+If the available evidence is completely unrelated or missing, explicitly say that the data does not support a confident conclusion.
+HOWEVER, if you are provided with dataset summaries (like total cases, exception breakdowns, or resolution status), use those aggregate metrics to answer high-level questions like "What are the biggest problems?", "Give me an executive summary", or "Which root cause occurs most frequently?".
 
 Distinguish clearly between:
 1. Verified facts (from the deterministic system)
@@ -14,27 +15,15 @@ Distinguish clearly between:
 Do NOT change the deterministic classification of any transaction.
 Respond strictly in JSON matching the following schema:
 {
-  "answer": "Your detailed explanation and analysis",
-  "verified_facts": ["Fact 1", "Fact 2"],
-  "recommendations": ["Rec 1", "Rec 2"],
+  "answer": "Your detailed explanation and analysis based on the provided CONTEXT. For dataset questions, summarize the exception counts and metrics.",
+  "verified_facts": ["Missing records: 3", "Matched transactions: 7"],
+  "recommendations": ["Investigate missing records first as they represent the largest issue."],
   "confidence": 0.9,
-  "sources": [{"type": "dataset", "id": "id_string"}],
+  "sources": [{"type": "dataset", "id": "global"}],
   "disclaimer": "This analysis is based on deterministic system data. AI recommendations should be verified by a human analyst."
 }
 
 NEVER return { "error": "..." }.
-
-If there is insufficient information, you MUST still return the complete JSON schema.
-Example:
-{
-  "answer": "There is insufficient verified information to provide a reliable analysis.",
-  "verified_facts": [],
-  "recommendations": [
-    "Provide additional dataset or case information."
-  ],
-  "confidence": 0.0,
-  "sources": []
-}
 """
 
 CASE_EXPLANATION_PROMPT = """Explain this specific financial exception case in simple language.

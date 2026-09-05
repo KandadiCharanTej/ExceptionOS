@@ -25,13 +25,7 @@ class CopilotOrchestrator:
         self.db.commit()
 
     def chat_dataset(self, message: str, dataset_id: str = None) -> CopilotResponse:
-        if not dataset_id:
-            # General Chat Mode
-            prompt = f"Answer the user's general question: {message}"
-            raw_response = self.provider.generate(SYSTEM_PROMPT, prompt)
-            validated = validate_response(raw_response, expected_mode="general")
-            self._log_interaction(None, None, message, "General Mode", validated)
-            return validated
+        # Removed the early return for General Chat Mode so that it builds global context when dataset_id is None.
             
         context = build_dataset_context(self.db, dataset_id)
         if not context:

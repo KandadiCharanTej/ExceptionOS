@@ -5,7 +5,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from exceptionos.api.main import app
 from exceptionos.database import get_db, init_db
-from exceptionos.database.models import Dataset, CaseRecord, AIInteraction
+from exceptionos.database.models import Dataset, CaseRecord, AIInteraction, AgentAction
 from exceptionos.ai.provider import ProviderException
 
 client = TestClient(app, raise_server_exceptions=True)
@@ -34,6 +34,7 @@ def test_dataset():
     
     # Cleanup
     db.query(AIInteraction).delete()
+    db.query(AgentAction).delete()
     db.query(CaseRecord).filter(CaseRecord.dataset_id == dataset.id).delete()
     db.query(Dataset).filter(Dataset.id == dataset.id).delete()
     db.commit()

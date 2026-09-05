@@ -25,14 +25,15 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_db():
     Base.metadata.create_all(bind=engine)
+    app.dependency_overrides[get_db] = override_get_db
     yield
     Base.metadata.drop_all(bind=engine)
+    app.dependency_overrides.pop(get_db, None)
 
 def test_ai_health_endpoint():
     # Should default to mock or whatever is configured
@@ -68,26 +69,36 @@ def test_demo_orchestration_normal():
         pass
 
 def test_demo_orchestration_ai_failure():
-    # Force AI provider to groq without key to simulate failure
-    os.environ["AI_PROVIDER"] = "groq"
-    os.environ.pop("GROQ_API_KEY", None)
-    
-    health_res = client.get("/api/health/ai")
-    assert health_res.json()["status"] == "UNAVAILABLE"
-    
-    # Run evaluation should NOT fail even if AI is unavailable (it should use deterministic fallback)
-    response = client.post("/api/evaluation/run?scenario_type=EXCEPTION_SPIKE")
-    assert response.status_code == 200
-    data = response.json()
-    
-    dataset_id = data["dataset_id"]
-    
-    # Fallback to REQUEST_ANALYST_REVIEW
-    exc_res = client.get(f"/api/evaluation/{dataset_id}/exceptions")
-    assert exc_res.status_code == 200
-    exceptions = exc_res.json()
-    
-    for exc in exceptions:
-        assert exc["recommended_action"] == "REQUEST_ANALYST_REVIEW"
+    old_ai_provider = os.environ.get("AI_PROVIDER")
+    old_groq_key = os.environ.get("GROQ_API_KEY")
+    try:
+        # Force AI provider to groq without key to simulate failure
+        os.environ["AI_PROVIDER"] = "groq"
+        os.environ.pop("GROQ_API_KEY", None)
         
-    os.environ["AI_PROVIDER"] = "mock"
+        health_res = client.get("/api/health/ai")
+        assert health_res.json()["status"] == "UNAVAILABLE"
+        
+        # Run evaluation should NOT fail even if AI is unavailable (it should use deterministic fallback)
+        response = client.post("/api/evaluation/run?scenario_type=EXCEPTION_SPIKE")
+        assert response.status_code == 200
+        data = response.json()
+        
+        dataset_id = data["dataset_id"]
+        
+        # Fallback to REQUEST_ANALYST_REVIEW
+        exc_res = client.get(f"/api/evaluation/{dataset_id}/exceptions")
+        assert exc_res.status_code == 200
+        exceptions = exc_res.json()
+        
+        for exc in exceptions:
+            assert exc["recommended_action"] == "REQUEST_ANALYST_REVIEW"
+    finally:
+        if old_ai_provider is not None:
+            os.environ["AI_PROVIDER"] = old_ai_provider
+        else:
+            os.environ.pop("AI_PROVIDER", None)
+        if old_groq_key is not None:
+            os.environ["GROQ_API_KEY"] = old_groq_key
+        else:
+            os.environ.pop("GROQ_API_KEY", None)

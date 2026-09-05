@@ -41,3 +41,7 @@ exceptionos-generate = "exceptionos.data_generator.generator:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/exceptionos"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

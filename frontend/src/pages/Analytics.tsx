@@ -1,127 +1,119 @@
 import { useEffect, useState } from 'react';
 import { getCases } from '../services/api';
 import type { CaseListResponse } from '../types/api';
-import { PageHeader, Metric, ChartContainer, LoadingState, ErrorState, Surface, PageContainer } from '../components/ui';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { BarChart3, PieChart as PieIcon, Lightbulb } from 'lucide-react';
-
-const COLORS = ['#0F172A', '#2563EB', '#F59E0B', '#EF4444'];
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Activity } from 'lucide-react';
 
 export default function Analytics() {
   const [data, setData] = useState<CaseListResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getCases(1, 100)
-      .then(setData)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        const res = await getCases(1, 100);
+        setData(res);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  if (loading) return <LoadingState message="Aggregating financial intelligence..." />;
-  if (error) return <ErrorState title="Unable to load analytics" message={error} />;
-
-  if (!data?.items.length) {
+  if (loading || !data) {
     return (
-      <PageContainer className="space-y-8">
-        <PageHeader overline="Intelligence" title="Financial Intelligence" description="Run a reconciliation to see analytics." />
-      </PageContainer>
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)]">
+        <Activity className="h-10 w-10 text-blue-500 animate-spin mb-4" />
+        <p className="text-slate-400 font-medium">Aggregating historical intelligence data...</p>
+      </div>
     );
   }
 
+  // Transform data for charts
   const classificationMap: Record<string, number> = {};
-  const rootCauseMap: Record<string, number> = {};
-  let exceptionCount = 0;
-
-  data.items.forEach((c) => {
-    const cls = c.classification.replace(/_/g, ' ');
-    classificationMap[cls] = (classificationMap[cls] || 0) + 1;
-    if (c.classification !== 'matched') exceptionCount++;
-    if (c.root_cause) {
-      const rc = c.root_cause.replace(/_/g, ' ');
-      rootCauseMap[rc] = (rootCauseMap[rc] || 0) + 1;
+  const statusMap: Record<string, number> = {};
+  
+  data.items.forEach(c => {
+    classificationMap[c.classification] = (classificationMap[c.classification] || 0) + 1;
+    if (c.status) {
+      statusMap[c.status] = (statusMap[c.status] || 0) + 1;
     }
   });
 
-  const classificationData = Object.entries(classificationMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-  const rootCauseData = Object.entries(rootCauseMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-  const totalRecords = data.items.length;
-  const exceptionRate = ((exceptionCount / totalRecords) * 100).toFixed(1);
-  const largestCategory = classificationData.filter((c) => c.name !== 'matched')[0];
-  const topRootCause = rootCauseData[0];
+  const classificationData = Object.entries(classificationMap).map(([name, value]) => ({
+    name: name.replace('_', ' ').toUpperCase(),
+    value
+  }));
+
+  const statusData = Object.entries(statusMap).map(([name, value]) => ({
+    name: name.replace('_', ' ').toUpperCase(),
+    value
+  }));
+
+  const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6'];
 
   return (
-    <PageContainer className="space-y-12">
-      <PageHeader
-        overline="Intelligence"
-        title="Financial Intelligence"
-        description="Understand operational patterns, exception distribution, and financial risk."
-      />
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Metric label="Total Records" value={totalRecords} size="compact" />
-        <Metric label="Exception Rate" value={`${exceptionRate}%`} variant="error" subtitle={`${exceptionCount} records`} size="compact" />
-        <Metric label="Largest Exception" value={largestCategory?.name || '—'} variant="warning" size="compact" subtitle={`${largestCategory?.value || 0} cases`} />
-        <Metric label="Top Root Cause" value={topRootCause?.name || '—'} variant="accent" size="compact" subtitle={`${topRootCause?.value || 0} cases`} />
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight text-white mb-1">Intelligence Analytics</h2>
+        <p className="text-slate-400">Visualization of historical exception data and resolution trends.</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <ChartContainer title="Exception Distribution" icon={BarChart3}>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={classificationData} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                <Bar dataKey="value" fill="#2563EB" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartContainer>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-[#0A0F1C] border-[#1E293B]">
+          <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B]">
+            <CardTitle className="text-slate-300">Exception Classifications</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={classificationData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1E293B" />
+                  <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                  <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12, fill: '#cbd5e1' }} stroke="#1E293B" />
+                  <Tooltip 
+                    cursor={{fill: '#1E293B'}} 
+                    contentStyle={{ backgroundColor: '#05080F', borderColor: '#1E293B', color: '#fff' }}
+                  />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-        <ChartContainer title="Root Cause Patterns" icon={PieIcon}>
-          {rootCauseData.length > 0 ? (
-            <div className="h-[280px]">
+        <Card className="bg-[#0A0F1C] border-[#1E293B]">
+          <CardHeader className="bg-[#1E293B]/30 pb-4 border-b border-[#1E293B]">
+            <CardTitle className="text-slate-300">Root Cause Status Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={rootCauseData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={3} dataKey="value">
-                    {rootCauseData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {statusData.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
                   </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 12, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#05080F', borderColor: '#1E293B', color: '#fff' }} />
+                  <Legend wrapperStyle={{ color: '#cbd5e1' }} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="flex flex-wrap justify-center gap-3 mt-2">
-                {rootCauseData.slice(0, 4).map((d, i) => (
-                  <span key={d.name} className="flex items-center gap-1.5 text-[11px] text-slate-600 capitalize">
-                    <span className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />{d.name}
-                  </span>
-                ))}
-              </div>
             </div>
-          ) : (
-            <div className="h-[280px] flex items-center justify-center text-sm text-slate-500">No root cause data</div>
-          )}
-        </ChartContainer>
+          </CardContent>
+        </Card>
       </div>
-
-      {largestCategory && (
-        <Surface className="p-6 border-l-4 border-l-blue-600">
-          <div className="flex items-start gap-4">
-            <div className="p-2.5 rounded-xl bg-blue-50"><Lightbulb className="w-5 h-5 text-blue-600" /></div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">Key Insight</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                <span className="capitalize font-semibold">{largestCategory.name}</span> is the largest exception category with{' '}
-                <strong>{largestCategory.value}</strong> occurrences ({((largestCategory.value / totalRecords) * 100).toFixed(1)}% of records).
-                {topRootCause && <> Most frequent root cause: <span className="capitalize font-semibold">{topRootCause.name}</span>.</>}
-              </p>
-              <p className="text-[11px] text-slate-400 mt-2 italic">Derived from deterministic reconciliation data.</p>
-            </div>
-          </div>
-        </Surface>
-      )}
-    </PageContainer>
+    </div>
   );
 }

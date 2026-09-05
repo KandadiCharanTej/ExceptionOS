@@ -63,7 +63,7 @@ def normalize_ai_response(raw_response: Any) -> dict:
         }
 
     return {
-        "response_mode": raw_response.get("response_mode", "general"),
+        "response_mode": raw_response.get("response_mode", "insufficient_data" if "verified_facts" not in raw_response else "general"),
         "answer": str(raw_response.get("answer", "The AI could not generate a complete answer.")),
         "verified_facts": raw_response.get("verified_facts", []) or [],
         "recommendations": raw_response.get("recommendations", []) or [],

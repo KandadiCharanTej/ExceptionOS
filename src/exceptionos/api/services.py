@@ -89,6 +89,7 @@ class InvestigationService:
                 events.append(event)
                 
             db.add_all(events)
+
             db.commit()
             return dataset.id
             

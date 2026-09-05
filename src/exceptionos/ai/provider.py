@@ -85,7 +85,7 @@ class GroqAIProvider(AIProvider):
 
 def get_ai_provider() -> AIProvider:
     import dotenv
-    dotenv.load_dotenv()
+    dotenv.load_dotenv(override=False)
     
     provider_name = os.getenv("AI_PROVIDER", "mock").lower()
     

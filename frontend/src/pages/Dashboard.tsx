@@ -1,308 +1,374 @@
 import { useNavigate } from 'react-router-dom';
-import {
-  Database, CheckCircle2, AlertTriangle, ChevronRight, ArrowUpRight,
-  PlusCircle, Clock, Bot, Activity, Sparkles
-} from 'lucide-react';
+import { Activity, Database, CheckCircle, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { getDatasets, getCases } from '../services/api';
-import {
-  PageHeader, SectionHeader, Metric, Surface, StatusBadge,
-  IntelligenceCard, AttentionItem, EmptyState, LoadingState, ErrorState,
-  PrimaryButton, SecondaryButton, SystemStatus, PageContainer
-} from '../components/ui';
-import { cn } from '../lib/utils';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-const CLASSIFICATION_LABELS: Record<string, { label: string; priority: 'critical' | 'high' | 'medium' }> = {
-  duplicate_detected: { label: 'Duplicate transactions detected', priority: 'critical' },
-  amount_mismatch: { label: 'Amount mismatches detected', priority: 'critical' },
-  missing_in_bank: { label: 'Missing settlement records', priority: 'high' },
-  missing_in_gateway: { label: 'Missing gateway records', priority: 'high' },
-  missing_in_ledger: { label: 'Missing ledger records', priority: 'high' },
-  date_mismatch: { label: 'Date mismatches detected', priority: 'medium' },
-  system_error: { label: 'System errors detected', priority: 'medium' },
-};
+import { getDatasets, getCases } from '../services/api';
+import { Card, CardContent, CardHeader, CardTitle, Badge } from '../components/ui';
+import { useApp } from '../context/AppContext';
+import { cn } from '../App';
+
+const COLORS = ['#4f46e5', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6'];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  const { data: datasetsData, isLoading, isError, error } = useQuery({
+  const { activeDatasetId, setActiveDatasetId } = useApp();
+  
+  const { data: datasetsData, isLoading: isLoadingDatasets } = useQuery({
     queryKey: ['datasets'],
     queryFn: getDatasets,
   });
 
-  const datasets = datasetsData?.datasets || [];
-  const activeDataset = datasets[0];
-  const recentDatasets = datasets.slice(0, 5);
+  const recentDatasets = datasetsData?.datasets.slice(0, 5) || [];
 
-  const { data: exceptionsData, isLoading: loadingExceptions } = useQuery({
-    queryKey: ['cases', activeDataset?.id, 'dashboard'],
+  // Only select a dataset if activeDatasetId is explicitly set by the user or URL
+  const activeDataset = activeDatasetId ? recentDatasets.find(d => d.id === activeDatasetId) : undefined;
+
+  const { data: exceptionsData, isLoading: isLoadingExceptions } = useQuery({
+    queryKey: ['cases', activeDataset?.id, 'exceptions'],
     queryFn: () => getCases(1, 100, undefined, activeDataset?.id),
     enabled: !!activeDataset,
   });
 
-  const { data: statsData } = useQuery({
-    queryKey: ['cases', 'stats'],
-    queryFn: () => getCases(1, 100),
-    enabled: datasets.length > 0,
-  });
+  // Calculate real trend data dynamically from existing datasets in DB
+  const trendData = (datasetsData?.datasets || []).slice(0, 7).reverse().map(d => ({
+    name: d.name.length > 10 ? d.name.substring(0, 8) + '...' : d.name,
+    transactions: d.total_cases,
+    exceptions: d.exception_count,
+  }));
 
-  const totalTransactions = datasets.reduce((a, d) => a + (d.total_cases || 0), 0);
-  const totalMatched = datasets.reduce((a, d) => a + (d.matched_cases || 0), 0);
-  const totalExceptions = datasets.reduce((a, d) => a + (d.exception_count || 0), 0);
+  const displayTrendData = (activeDatasetId && trendData.length > 0) ? trendData : [
+    { name: 'Mon', transactions: 0, exceptions: 0 },
+    { name: 'Tue', transactions: 0, exceptions: 0 },
+    { name: 'Wed', transactions: 0, exceptions: 0 },
+    { name: 'Thu', transactions: 0, exceptions: 0 },
+    { name: 'Fri', transactions: 0, exceptions: 0 },
+    { name: 'Sat', transactions: 0, exceptions: 0 },
+    { name: 'Sun', transactions: 0, exceptions: 0 },
+  ];
 
-  const txCount = activeDataset?.total_cases || totalTransactions;
-  const matchRate = txCount > 0
-    ? (((activeDataset?.matched_cases || totalMatched) / txCount) * 100).toFixed(1)
-    : '0.0';
-  const exceptionCount = activeDataset?.exception_count ?? totalExceptions;
+  // Calculate real exception distribution dynamically from active dataset exceptions
+  const exceptionCounts: Record<string, number> = {};
+  if (exceptionsData?.items) {
+    exceptionsData.items.forEach(c => {
+      if (c.classification !== 'matched') {
+        const label = c.classification.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        exceptionCounts[label] = (exceptionCounts[label] || 0) + 1;
+      }
+    });
+  }
+  const exceptionDistribution = Object.entries(exceptionCounts).map(([name, value]) => ({ name, value }));
 
-  const resolvedCases = statsData?.items.filter(
-    (c) => c.status === 'RESOLVED' || c.status === 'VERIFIED' || c.status === 'RECORDED'
-  ).length || 0;
-  const openExceptions = statsData?.items.filter((c) => c.classification !== 'matched').length || exceptionCount;
-  const resolutionRate = openExceptions > 0
-    ? ((resolvedCases / openExceptions) * 100).toFixed(1)
-    : exceptionCount === 0 ? '100' : '—';
+  const displayExceptionDistribution = (activeDatasetId && exceptionDistribution.length > 0) ? exceptionDistribution : [
+    { name: 'No Active Data', value: 1 }
+  ];
 
-  const exceptionGroups: Record<string, number> = {};
-  (exceptionsData?.items || []).forEach((c) => {
-    if (c.classification !== 'matched') {
-      exceptionGroups[c.classification] = (exceptionGroups[c.classification] || 0) + 1;
-    }
-  });
-  const attentionItems = Object.entries(exceptionGroups)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([cls, count]) => ({
-      cls,
-      count,
-      ...(CLASSIFICATION_LABELS[cls] || { label: cls.replace(/_/g, ' '), priority: 'medium' as const }),
-    }));
-
-  const topException = attentionItems[0];
+  const handleSelectDataset = (id: string) => {
+    setActiveDatasetId(id);
+    navigate(`/cases?dataset_id=${id}`);
+  };
 
   return (
-    <PageContainer className="space-y-12">
-      <PageHeader
-        overline="ExceptionOS"
-        title="Financial Intelligence Command Center"
-        description="Monitor reconciliation health, identify financial risk, and coordinate intelligent resolution."
-        actions={
-          <>
-            <SystemStatus healthy={!isError} />
-            <PrimaryButton onClick={() => navigate('/datasets')}>
-              Run Reconciliation <ArrowUpRight className="w-4 h-4" />
-            </PrimaryButton>
-          </>
-        }
-      />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-1">Financial Intelligence</h1>
+          <p className="text-slate-500">Monitor your deterministic reconciliation pipeline and active exceptions.</p>
+        </div>
+        <button
+          onClick={() => navigate('/demo')}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-5 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer"
+        >
+          Run Reconciliation
+        </button>
+      </div>
 
-      {isLoading && <LoadingState message="Connecting to reconciliation engine..." />}
-      {isError && <ErrorState title="Unable to load metrics" message={(error as Error)?.message} />}
-
-      {!isLoading && datasets.length === 0 && (
-        <EmptyState
-          icon={Database}
-          title="No reconciliation data yet"
-          description="Upload Ledger, Gateway, and Bank CSV files to run your first 3-way deterministic reconciliation."
-          action={
-            <PrimaryButton onClick={() => navigate('/datasets')}>
-              <PlusCircle className="w-4 h-4" /> Start Reconciliation
-            </PrimaryButton>
-          }
-        />
+      {!activeDatasetId && (
+        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center flex flex-col items-center justify-center">
+          <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
+            <Database className="w-7 h-7 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">No Active Dataset Selected</h3>
+          <p className="text-slate-500 max-w-md mx-auto text-sm leading-relaxed mb-6">
+            Upload your 3-way financial CSV files (Internal Ledger, Payment Gateway, Bank Statement) or run a synthetic scenario to initialize reconciliation metrics.
+          </p>
+          <button
+            onClick={() => navigate('/demo')}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-3 rounded-xl shadow-sm transition-all cursor-pointer inline-flex items-center gap-2"
+          >
+            <Database className="w-4 h-4" /> Upload Dataset & Run Reconciliation
+          </button>
+        </div>
       )}
 
-      {!isLoading && datasets.length > 0 && (
-        <>
-          {/* Asymmetric metrics */}
-          <div className="grid gap-4 lg:grid-cols-12">
-            <div className="lg:col-span-5">
-              <Metric
-                label="Transactions processed"
-                value={txCount.toLocaleString()}
-                subtitle={`Across ${datasets.length} reconciliation ${datasets.length === 1 ? 'run' : 'runs'}`}
-                icon={Database}
-                size="hero"
-              />
-            </div>
-            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Metric
-                label="Successfully reconciled"
-                value={`${matchRate}%`}
-                variant="success"
-                icon={CheckCircle2}
-                trend={{ direction: 'up', value: `${activeDataset?.matched_cases || totalMatched} matched` }}
-              />
-              <Metric
-                label="Require investigation"
-                value={exceptionCount.toLocaleString()}
-                variant="error"
-                icon={AlertTriangle}
-                subtitle="Active exceptions"
-              />
-              <Metric
-                label="Resolution rate"
-                value={resolutionRate === '—' ? '—' : `${resolutionRate}%`}
-                variant="accent"
-                icon={Activity}
-                subtitle="Of open exceptions"
-              />
-            </div>
-          </div>
-
-          {/* Attention + AI */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <SectionHeader
-                title="Requires Attention"
-                description="Financial exceptions prioritized by risk and impact."
-                action={
-                  <SecondaryButton onClick={() => navigate(activeDataset ? `/cases?dataset_id=${activeDataset.id}` : '/cases')} className="text-xs">
-                    Full Queue ({exceptionCount}) <ChevronRight className="w-3.5 h-3.5" />
-                  </SecondaryButton>
-                }
-              />
-              <Surface className="overflow-hidden">
-                {loadingExceptions ? (
-                  <LoadingState message="Loading exception queue..." />
-                ) : attentionItems.length > 0 ? (
-                  attentionItems.map((item) => (
-                    <AttentionItem
-                      key={item.cls}
-                      priority={item.priority}
-                      title={item.label}
-                      count={item.count}
-                      subtitle="affected records · High financial risk"
-                      onAction={() => navigate(`/cases?dataset_id=${activeDataset?.id}&classification=${item.cls}`)}
-                    />
-                  ))
-                ) : (
-                  <div className="p-12 text-center">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-slate-800">All Clear</p>
-                    <p className="text-xs text-slate-500 mt-1">No active exceptions requiring attention.</p>
-                  </div>
-                )}
-              </Surface>
-            </div>
-
-            <div className="space-y-4">
-              <IntelligenceCard
-                insight={
-                  topException
-                    ? `Your reconciliation data has a significant ${topException.label.toLowerCase()}.`
-                    : 'Reconciliation engine is operating normally.'
-                }
-                detail={topException ? `${topException.count.toLocaleString()} exceptions detected.` : `${matchRate}% match rate across all runs.`}
-                recommendation={
-                  topException
-                    ? `Investigate high-impact ${topException.label.toLowerCase()} first.`
-                    : 'Run analytics to explore operational patterns.'
-                }
-                action={
-                  <button
-                    onClick={() => navigate('/copilot')}
-                    className="w-full py-2.5 bg-white/10 hover:bg-white/15 text-white text-sm font-semibold rounded-xl border border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Bot className="w-4 h-4" /> Ask AI Intelligence →
-                  </button>
-                }
-              />
-
-              <Surface className="p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-4">System Status</p>
-                <div className="space-y-3 text-xs">
-                  {[
-                    ['Deterministic Engine', '3-Way Active'],
-                    ['AI Advisory Layer', 'Bounded / Online'],
-                    ['Active Datasets', datasets.length.toString()],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between items-center">
-                      <span className="text-slate-500">{k}</span>
-                      <span className="font-semibold text-slate-900">{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </Surface>
-            </div>
-          </div>
-
-          {/* Recent activity */}
-          <div>
-            <SectionHeader
-              title="Recent Reconciliation Activity"
-              action={
-                <SecondaryButton onClick={() => navigate('/datasets')} className="text-xs">
-                  View All <ChevronRight className="w-3.5 h-3.5" />
-                </SecondaryButton>
-              }
-            />
-            <Surface className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                      <th className="px-6 py-4 text-left font-semibold">Dataset</th>
-                      <th className="px-6 py-4 text-right font-semibold">Records</th>
-                      <th className="px-6 py-4 text-right font-semibold">Exceptions</th>
-                      <th className="px-6 py-4 text-left font-semibold">Status</th>
-                      <th className="px-6 py-4 text-left font-semibold">Created</th>
-                      <th className="px-6 py-4" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentDatasets.map((ds) => (
-                      <tr
-                        key={ds.id}
-                        onClick={() => navigate(`/cases?dataset_id=${ds.id}`)}
-                        className="border-b border-slate-50 last:border-0 hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                      >
-                        <td className="px-6 py-4 font-semibold text-slate-900">{ds.name}</td>
-                        <td className="px-6 py-4 text-right tabular-nums text-slate-700">{ds.total_cases.toLocaleString()}</td>
-                        <td className="px-6 py-4 text-right">
-                          <span className={cn('font-bold tabular-nums', ds.exception_count > 0 ? 'text-red-600' : 'text-emerald-600')}>
-                            {ds.exception_count}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4"><StatusBadge status={ds.status} /></td>
-                        <td className="px-6 py-4 text-xs text-slate-500">
-                          {new Date(ds.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors inline" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      {/* Top KPIs */}
+      <div className="grid gap-5 md:grid-cols-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="text-sm font-medium text-slate-500">Total Transactions</h3>
+              <div className="p-2 bg-indigo-50 rounded-lg">
+                <Database className="h-4 w-4 text-primary" />
               </div>
-            </Surface>
-          </div>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">
+              {isLoadingDatasets ? <Activity className="h-6 w-6 animate-spin text-slate-300" /> : (activeDataset?.total_cases?.toLocaleString() || '-')}
+            </div>
+            <div className="mt-2 flex items-center text-xs text-slate-500">
+              {activeDataset ? (
+                <span className="text-indigo-600 font-medium bg-indigo-50 px-1.5 py-0.5 rounded truncate max-w-full">
+                  Batch: {activeDataset.name}
+                </span>
+              ) : (
+                <span>No active batch selected</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="text-sm font-medium text-slate-500">Match Rate</h3>
+              <div className="p-2 bg-emerald-50 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">
+              {isLoadingDatasets ? <Activity className="h-6 w-6 animate-spin text-slate-300" /> : 
+                (activeDataset && activeDataset.total_cases > 0 
+                  ? `${((activeDataset.matched_cases / activeDataset.total_cases) * 100).toFixed(1)}%` 
+                  : '-')}
+            </div>
+            <div className="mt-2 flex items-center text-xs text-slate-500">
+              {activeDataset ? (
+                <span className="text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">
+                  {activeDataset.matched_cases.toLocaleString()} matched
+                </span>
+              ) : (
+                <span>No active batch selected</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Quick actions - minimal, not card grid overload */}
-          <div className="flex flex-wrap gap-3 pt-2">
-            {[
-              { label: 'Run Reconciliation', desc: 'Upload & match', to: '/datasets', icon: PlusCircle },
-              { label: 'Investigations', desc: 'Triage exceptions', to: '/cases', icon: AlertTriangle },
-              { label: 'AI Intelligence', desc: 'Natural language queries', to: '/copilot', icon: Sparkles },
-            ].map(({ label, desc, to, icon: Icon }) => (
-              <button
-                key={to}
-                onClick={() => navigate(to)}
-                className="flex items-center gap-3 px-5 py-3.5 bg-white border border-slate-200/80 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all text-left cursor-pointer group"
-              >
-                <Icon className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{label}</p>
-                  <p className="text-[11px] text-slate-500">{desc}</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 ml-2 group-hover:text-blue-500" />
+        <Card className={cn(activeDataset && activeDataset.exception_count > 0 ? "border-red-100 bg-red-50/30" : "")}>
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="text-sm font-medium text-slate-500">Active Exceptions</h3>
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">
+              {isLoadingDatasets ? <Activity className="h-6 w-6 animate-spin text-red-300" /> : (activeDataset ? activeDataset.exception_count.toLocaleString() : '-')}
+            </div>
+            <div className="mt-2 flex items-center text-xs text-slate-500">
+              {activeDataset ? (
+                <span className={cn("font-medium px-1.5 py-0.5 rounded", activeDataset.exception_count > 0 ? "text-red-600 bg-red-100" : "text-emerald-600 bg-emerald-50")}>
+                  {activeDataset.exception_count > 0 ? `${activeDataset.exception_count} require review` : "All clear"}
+                </span>
+              ) : (
+                <span>No active batch selected</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-row items-center justify-between pb-2">
+              <h3 className="text-sm font-medium text-slate-500">Resolution Rate</h3>
+              <div className="p-2 bg-indigo-50 rounded-lg">
+                <Activity className="h-4 w-4 text-indigo-600" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">
+              {activeDataset ? (
+                activeDataset.exception_count > 0 
+                  ? `${Math.round(((activeDataset.matched_cases) / activeDataset.total_cases) * 100)}%` 
+                  : '100%'
+              ) : '-'}
+            </div>
+            <div className="mt-2 flex items-center text-xs text-slate-500">
+              <span>{activeDataset ? "Automated reconciliation" : "No active batch selected"}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Visualizations Row */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Reconciliation Volume Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={displayTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorExc" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dx={-10} domain={[0, 'auto']} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    itemStyle={{ fontSize: '14px', fontWeight: 500 }}
+                  />
+                  <Area type="linear" dataKey="transactions" stroke="#4f46e5" strokeWidth={2} fillOpacity={1} fill="url(#colorTx)" />
+                  <Area type="linear" dataKey="exceptions" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorExc)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Exception Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center">
+            <div className="h-[250px] w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={displayExceptionDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {displayExceptionDistribution.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={exceptionDistribution.length > 0 ? COLORS[index % COLORS.length] : '#cbd5e1'} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    itemStyle={{ fontSize: '14px', fontWeight: 500 }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom Row */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Recent Datasets */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Recent Data Batches</CardTitle>
+            <button onClick={() => navigate(activeDataset ? `/cases?dataset_id=${activeDataset.id}` : '/cases')} className="text-sm font-medium text-primary hover:text-primary/80 flex items-center transition-colors cursor-pointer">
+              View All <ChevronRight className="h-4 w-4 ml-1" />
+            </button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-y border-border">
+                  <tr>
+                    <th className="px-6 py-3 font-medium">Dataset Name</th>
+                    <th className="px-6 py-3 font-medium text-right">Cases</th>
+                    <th className="px-6 py-3 font-medium text-right">Exceptions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {isLoadingDatasets ? (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-slate-500">
+                        <Activity className="h-5 w-5 animate-spin mx-auto mb-2" />
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : recentDatasets.length > 0 ? (
+                    recentDatasets.map(ds => (
+                      <tr 
+                        key={ds.id} 
+                        className={cn(
+                          "hover:bg-slate-50 transition-colors cursor-pointer group",
+                          ds.id === activeDataset?.id && "bg-indigo-50/40 font-semibold"
+                        )} 
+                        onClick={() => handleSelectDataset(ds.id)}
+                      >
+                        <td className="px-6 py-4 text-slate-900 group-hover:text-primary transition-colors flex items-center gap-2">
+                          {ds.id === activeDataset?.id && <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>}
+                          {ds.name}
+                        </td>
+                        <td className="px-6 py-4 text-right text-slate-600">{ds.total_cases.toLocaleString()}</td>
+                        <td className="px-6 py-4 text-right font-medium text-red-600">{ds.exception_count.toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-slate-500">No datasets found. Run reconciliation to get started.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Priority Investigation Queue */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border">
+            <div className="flex items-center">
+              <div className="p-1.5 bg-red-100 rounded-md mr-3">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+              </div>
+              <CardTitle className="text-base text-slate-900">Priority Investigation Queue</CardTitle>
+            </div>
+            {activeDataset && (
+              <button onClick={() => navigate(`/cases?dataset_id=${activeDataset.id}`)} className="text-sm font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer">
+                View Queue
               </button>
+            )}
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoadingExceptions ? (
+              <div className="p-8 text-center text-slate-500">
+                <Activity className="h-5 w-5 animate-spin mx-auto mb-2" />
+                Loading exceptions...
+              </div>
+            ) : exceptionsData?.items.filter(c => c.classification !== 'matched').slice(0, 4).map(c => (
+              <div key={c.case_id} className="p-4 border-b border-border hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/cases/${c.case_id}${activeDataset?.id ? `?dataset_id=${activeDataset.id}` : ''}`)}>
+                <div>
+                  <div className="text-sm font-bold text-slate-900 mb-1.5 group-hover:text-primary transition-colors">{c.case_id}</div>
+                  <div className="flex items-center text-xs gap-2">
+                    <Badge variant="error">{c.classification.replace('_', ' ')}</Badge>
+                    {c.confidence_score !== null && <span className="text-slate-500 font-medium">Confidence: {c.confidence_score}%</span>}
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />
+              </div>
             ))}
-          </div>
-        </>
-      )}
-    </PageContainer>
+            
+            {(!exceptionsData || exceptionsData.items.filter(c => c.classification !== 'matched').length === 0) && !isLoadingExceptions && (
+              <div className="p-8 text-center flex flex-col items-center">
+                <div className="h-12 w-12 bg-emerald-50 rounded-full flex items-center justify-center mb-3">
+                  <CheckCircle className="h-6 w-6 text-emerald-500" />
+                </div>
+                <h3 className="text-sm font-medium text-slate-900 mb-1">Queue Clear</h3>
+                <p className="text-sm text-slate-500">No active exceptions require investigation.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
+

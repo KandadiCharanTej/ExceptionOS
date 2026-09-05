@@ -10,7 +10,8 @@ import type {
   CopilotResponse
 } from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const rawBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -194,4 +195,31 @@ export const prioritizeCases = async (datasetId: string): Promise<CopilotRespons
   });
   return response.data;
 };
+
+export const getEvaluation = async (datasetId: string) => {
+  const response = await api.get(`/api/evaluation/${datasetId}`);
+  return response.data;
+};
+
+export const getEvaluationExceptions = async (datasetId: string) => {
+  const response = await api.get(`/api/evaluation/${datasetId}/exceptions`);
+  return response.data;
+};
+
+export const getEvaluationReport = async (datasetId: string): Promise<string> => {
+  const response = await api.get<{ report: string }>(`/api/evaluation/${datasetId}/report`);
+  return response.data?.report || '';
+};
+
+export const runEvaluation = async (scenarioType?: string) => {
+  const url = scenarioType ? `/api/evaluation/run?scenario_type=${scenarioType}` : '/api/evaluation/run';
+  const response = await api.post(url);
+  return response.data;
+};
+
+export const analyzeCaseWithAgent = async (caseId: string) => {
+  const response = await api.post(`/api/agent/case/${caseId}/analyze`);
+  return response.data;
+};
+
 

@@ -69,12 +69,12 @@ def run_upload_reconciliation(
 @router.post("/api/reconcile", response_model=PipelineRunResponse)
 def run_reconciliation():
     try:
-        from pathlib import Path
-        base_dir = Path(__file__).resolve().parents[4]
+        from exceptionos.database.session import get_repo_root
+        base_dir = get_repo_root()
         demo_dir = base_dir / "data" / "demo"
         train_dir = base_dir / "data" / "train"
         data_dir = demo_dir if (demo_dir / "ledger.csv").exists() else train_dir
-        dataset_title = "ExceptionOS Demo Dataset" if data_dir == demo_dir else "Demo Training Dataset"
+        dataset_title = "Synthetic Demo Dataset" if data_dir == demo_dir else "Synthetic Demo Dataset (Training)"
         source_type = "DEMO" if data_dir == demo_dir else "TRAINING"
         
         l = load_csv(str(data_dir / "ledger.csv"))

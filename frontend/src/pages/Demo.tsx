@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Database, Activity, Server, FileText, CheckCircle, AlertTriangle, UploadCloud, Globe, Landmark, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { uploadReconciliationFiles } from '../services/api';
+import { uploadReconciliationFiles, runEvaluation } from '../services/api';
 import { Card, CardContent, Badge } from '../components/ui';
 import { cn } from '../App';
 import { useApp } from '../context/AppContext';
@@ -23,7 +23,7 @@ export default function Reconcile() {
   const bankRef = useRef<HTMLInputElement>(null);
 
   const [activeStep, setActiveStep] = useState<number>(0);
-  const [demoScenario, setDemoScenario] = useState<string>('');
+  const [demoScenario, setDemoScenario] = useState<string | null>(null);
 
   const uploadMutation = useMutation({
     mutationFn: (files: { ledger: File, gateway: File, bank: File }) => 
@@ -52,11 +52,7 @@ export default function Reconcile() {
   });
 
   const demoMutation = useMutation({
-    mutationFn: async (scenario: string) => {
-      const res = await fetch(`/api/evaluation/run?scenario_type=${scenario}`, { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to run evaluation');
-      return res.json();
-    },
+    mutationFn: (scenario: string) => runEvaluation(scenario),
     onMutate: () => {
       setActiveStep(1);
       setTimeout(() => setActiveStep(2), 1500);
@@ -195,7 +191,7 @@ export default function Reconcile() {
 
         {/* Synthetic Demo Scenarios */}
         <div className="text-center mb-6">
-          <h3 className="text-sm font-semibold text-slate-900 mb-4">Run Synthetic Buildathon Data</h3>
+          <h3 className="text-sm font-semibold text-slate-900 mb-4">Run Synthetic Demo Datasets (Multi-Source 3-Way Reconciliation)</h3>
           <div className="flex flex-wrap justify-center gap-3">
             {[
               { id: 'NORMAL_RECONCILIATION', label: 'Normal' },

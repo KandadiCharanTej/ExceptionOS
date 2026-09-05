@@ -15,14 +15,25 @@ venv/
 .idea/
 .vscode/
 
-# Local outputs
+# Local outputs & database
 exceptions.csv
 report.json
-/data/
+data/*.sqlite
+data/*.sqlite-journal
+data/*.db
+data/memory/
+data/train/
+data/test/
+!data/demo/
+!data/demo/**
 
 # Environment variables
 .env
-.env.*
+.env.local
+.env.development
+.env.production
+!.env.example
+!frontend/.env.example
 
 # Node
 frontend/node_modules/

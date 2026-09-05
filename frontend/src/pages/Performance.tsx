@@ -7,6 +7,13 @@ import toast from 'react-hot-toast';
 import { Card, CardContent, CardHeader, CardTitle, Badge } from '../components/ui';
 import { cn } from '../App';
 import { useApp } from '../context/AppContext';
+import { 
+  getEvaluation, 
+  getEvaluationExceptions, 
+  getEvaluationReport, 
+  runEvaluation, 
+  analyzeCaseWithAgent 
+} from '../services/api';
 
 export default function Performance() {
   const queryClient = useQueryClient();
@@ -18,47 +25,24 @@ export default function Performance() {
 
   const { data: currentRun, isLoading: isLoadingRun } = useQuery({
     queryKey: ['evaluation', activeDatasetId],
-    queryFn: async () => {
-      const res = await fetch(`/api/evaluation/${activeDatasetId}`);
-      if (!res.ok) throw new Error('Failed to fetch evaluation metrics');
-      return res.json();
-    },
+    queryFn: () => getEvaluation(activeDatasetId!),
     enabled: !!activeDatasetId
   });
 
   const { data: exceptions, isLoading: isLoadingExceptions } = useQuery({
     queryKey: ['evaluation', activeDatasetId, 'exceptions'],
-    queryFn: async () => {
-      const res = await fetch(`/api/evaluation/${activeDatasetId}/exceptions`);
-      if (!res.ok) throw new Error('Failed to fetch unresolved exceptions');
-      return res.json();
-    },
+    queryFn: () => getEvaluationExceptions(activeDatasetId!),
     enabled: !!activeDatasetId
   });
 
   const { data: proofReport } = useQuery({
     queryKey: ['evaluation', activeDatasetId, 'report'],
-    queryFn: async () => {
-      const res = await fetch(`/api/evaluation/${activeDatasetId}/report`);
-      if (!res.ok) throw new Error('Failed to fetch proof report');
-      const data = await res.json();
-      return data.report;
-    },
+    queryFn: () => getEvaluationReport(activeDatasetId!),
     enabled: !!activeDatasetId
   });
 
   const runMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch('/api/evaluation/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Evaluation run failed');
-      }
-      return res.json();
-    },
+    mutationFn: () => runEvaluation(),
     onSuccess: (data) => {
       toast.success('Performance evaluation completed!');
       setLocalDatasetId(data.dataset_id);
@@ -72,11 +56,7 @@ export default function Performance() {
   });
 
   const analyzeActionMutation = useMutation({
-    mutationFn: async (caseId: string) => {
-      const res = await fetch(`/api/agent/case/${caseId}/analyze`, { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to run AI agent analysis');
-      return res.json();
-    },
+    mutationFn: (caseId: string) => analyzeCaseWithAgent(caseId),
     onSuccess: () => {
       toast.success('AI Agent analysis generated');
       queryClient.invalidateQueries({ queryKey: ['evaluation', activeDatasetId, 'exceptions'] });
@@ -98,7 +78,14 @@ export default function Performance() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-1">Performance & Telemetry</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-1">Performance & Telemetry</h1>
+            {activeDatasetId && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Synthetic Demo Dataset
+              </span>
+            )}
+          </div>
           <p className="text-slate-500">Measure deterministic engine accuracy, throughput, and automated resolution rates.</p>
         </div>
         <button

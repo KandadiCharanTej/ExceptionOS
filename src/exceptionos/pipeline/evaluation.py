@@ -47,7 +47,8 @@ def run_evaluation(db: Session, num_records: int = 50, scenario_type: str = "NOR
         processing_time_ms = (end_time - start_time) * 1000
         throughput = num_records / (end_time - start_time) if end_time > start_time else 0
         
-        dataset_name = f"Evaluation Batch - {scenario_type} ({num_records} records)"
+        scenario_title = scenario_type.replace('_', ' ').title()
+        dataset_name = f"Synthetic Demo Dataset — {scenario_title} ({num_records} records)"
         dataset_id = investigation_service.create_dataset(
             name=dataset_name,
             source_type="EVALUATION",
@@ -157,9 +158,9 @@ def generate_proof_report(db: Session, dataset_id: str) -> str:
         matched_records = sum(1 for c in cases if c.classification == "matched")
         exception_records = total_records - matched_records
         
-        from pathlib import Path
+        from exceptionos.database.session import get_repo_root
         import csv
-        base_dir = Path(__file__).resolve().parents[4]
+        base_dir = get_repo_root()
         gt_json = base_dir / "data" / "demo" / "ground_truth.json"
         gt_csv = base_dir / "data" / "demo" / "ground_truth.csv"
         

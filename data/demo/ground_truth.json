@@ -1,0 +1,502 @@
+[
+  {
+    "transaction_id": "TXN-2026-0001",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0002",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0003",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0004",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0005",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0006",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0007",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0008",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0009",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0010",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0011",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0012",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0013",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0014",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0015",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0016",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0017",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0018",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0019",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0020",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0021",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0022",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0023",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0024",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0025",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0026",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0027",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0028",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0029",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0030",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0031",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0032",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0033",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0034",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0035",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0036",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0037",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0038",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0039",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0040",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0041",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0042",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0043",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0044",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0045",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0046",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0047",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0048",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0049",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0050",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0051",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0052",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0053",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0054",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0055",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0056",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0057",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0058",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0059",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0060",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0061",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0062",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0063",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0064",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0065",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0066",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0067",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0068",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0069",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0070",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0071",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0072",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0073",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0074",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0075",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0076",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0077",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0078",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0079",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0080",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0081",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0082",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0083",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0084",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0085",
+    "expected_classification": "matched",
+    "scenario": "perfect_3_way_match"
+  },
+  {
+    "transaction_id": "TXN-2026-0086",
+    "expected_classification": "amount_mismatch",
+    "scenario": "bank_amount_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0087",
+    "expected_classification": "amount_mismatch",
+    "scenario": "bank_amount_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0088",
+    "expected_classification": "amount_mismatch",
+    "scenario": "bank_amount_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0089",
+    "expected_classification": "amount_mismatch",
+    "scenario": "bank_amount_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0090",
+    "expected_classification": "amount_mismatch",
+    "scenario": "bank_amount_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0091",
+    "expected_classification": "date_mismatch",
+    "scenario": "bank_date_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0092",
+    "expected_classification": "date_mismatch",
+    "scenario": "bank_date_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0093",
+    "expected_classification": "date_mismatch",
+    "scenario": "bank_date_mismatch"
+  },
+  {
+    "transaction_id": "TXN-2026-0094",
+    "expected_classification": "timing_issue",
+    "scenario": "settlement_delay"
+  },
+  {
+    "transaction_id": "TXN-2026-0095",
+    "expected_classification": "timing_issue",
+    "scenario": "settlement_delay"
+  },
+  {
+    "transaction_id": "TXN-2026-0096",
+    "expected_classification": "timing_issue",
+    "scenario": "settlement_delay"
+  },
+  {
+    "transaction_id": "TXN-2026-0097",
+    "expected_classification": "missing",
+    "scenario": "missing_bank_record"
+  },
+  {
+    "transaction_id": "TXN-2026-0098",
+    "expected_classification": "missing",
+    "scenario": "missing_bank_record"
+  },
+  {
+    "transaction_id": "TXN-2026-0099",
+    "expected_classification": "duplicate",
+    "scenario": "duplicate_gateway_record"
+  },
+  {
+    "transaction_id": "TXN-2026-0100",
+    "expected_classification": "duplicate",
+    "scenario": "duplicate_gateway_record"
+  }
+]

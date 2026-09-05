@@ -43,9 +43,9 @@ def get_evaluation(dataset_id: str, db: Session = Depends(get_db)):
         unresolved = exception_records - resolved_count
         
         # Dynamically evaluate against Ground Truth if ground truth is available
-        from pathlib import Path
+        from exceptionos.database.session import get_repo_root
         import json, csv
-        base_dir = Path(__file__).resolve().parents[4]
+        base_dir = get_repo_root()
         gt_json = base_dir / "data" / "demo" / "ground_truth.json"
         gt_csv = base_dir / "data" / "demo" / "ground_truth.csv"
         

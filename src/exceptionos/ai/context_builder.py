@@ -31,6 +31,9 @@ def build_dataset_context(db: Session, dataset_id: str = None) -> Optional[str]:
         classification_counts[c] = classification_counts.get(c, 0) + 1
         
         # Check resolutions
+        if case.classification == "matched":
+            continue
+            
         if case.resolutions:
             res_status = case.resolutions[-1].status
             status_counts[res_status] = status_counts.get(res_status, 0) + 1

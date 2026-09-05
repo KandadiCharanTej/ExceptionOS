@@ -310,10 +310,45 @@ export default function Demo() {
                     <Download className="w-4 h-4" />
                   </button>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <pre className="text-[10px] text-emerald-500/80 p-4 font-mono overflow-auto max-h-[300px] leading-tight whitespace-pre-wrap">
-                    {proofReport || 'Generating...'}
-                  </pre>
+                <CardContent className="p-0 max-h-[400px] overflow-y-auto bg-[#05080F]">
+                  {(!proofReport || proofReport === 'Generating...') ? (
+                    <div className="p-6 text-emerald-500/80 font-mono text-sm">{proofReport || 'Generating...'}</div>
+                  ) : (
+                    <div className="p-6 space-y-8">
+                      {proofReport.split('====================================================').map(s => s.trim()).filter(Boolean).map((section, idx) => {
+                        const lines = section.split('\n');
+                        const title = lines[0];
+                        const content = lines.slice(1).join('\n').trim();
+                        
+                        // If it's just a title block, render it as a section header
+                        if (title.includes('REPORT') || title.includes('BREAKDOWN') || title.includes('UNRESOLVED')) {
+                          return (
+                            <div key={idx} className="space-y-4">
+                              <h4 className="text-emerald-400 font-bold uppercase tracking-wider text-sm border-b border-emerald-900/50 pb-2">
+                                {title}
+                              </h4>
+                              {content && (
+                                <div className="bg-[#0A0F1C] border border-[#1E293B] rounded-md p-4">
+                                  <pre className="text-slate-300 font-mono text-xs whitespace-pre-wrap leading-relaxed">
+                                    {content}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        // Fallback for any other content
+                        return content ? (
+                          <div key={idx} className="bg-[#0A0F1C] border border-[#1E293B] rounded-md p-4">
+                            <pre className="text-slate-300 font-mono text-xs whitespace-pre-wrap leading-relaxed">
+                              {section}
+                            </pre>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

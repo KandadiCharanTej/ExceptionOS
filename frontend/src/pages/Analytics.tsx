@@ -33,11 +33,25 @@ export default function Analytics() {
   }
 
   // Transform data for charts
-  const classificationMap: Record<string, number> = {};
+  const classificationMap: Record<string, number> = {
+    'matched': 0,
+    'duplicate': 0,
+    'missing': 0,
+    'timing_issue': 0,
+    'amount_mismatch': 0,
+    'date_mismatch': 0,
+    'unresolved/unknown': 0
+  };
   const statusMap: Record<string, number> = {};
   
   data.items.forEach(c => {
-    classificationMap[c.classification] = (classificationMap[c.classification] || 0) + 1;
+    // Map missing left/right to missing for simpler chart
+    let cls = c.classification;
+    if (cls === 'unmatched_left' || cls === 'unmatched_right') cls = 'missing';
+    
+    // Increment or initialize
+    classificationMap[cls] = (classificationMap[cls] || 0) + 1;
+    
     if (c.status) {
       statusMap[c.status] = (statusMap[c.status] || 0) + 1;
     }

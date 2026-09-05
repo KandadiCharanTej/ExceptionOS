@@ -99,7 +99,12 @@ export default function Investigation() {
     mutationFn: () => explainCase(caseId!),
     onSuccess: () => {},
     onError: (err: any) => {
-      toast.error(err.message || 'Failed to generate AI explanation');
+      if (err.response?.status === 503) {
+        toast.error('⚠️ AI service temporarily unavailable. Please try again.');
+      } else {
+        const errDetail = err.response?.data?.detail || err.message;
+        toast.error(`Failed to generate AI explanation: ${errDetail}`);
+      }
       setExplainModalOpen(false);
     }
   });
@@ -405,31 +410,43 @@ export default function Investigation() {
                     </div>
                   ) : explainMutation.data ? (
                     <div className="space-y-5 relative z-10">
-                      <div className="bg-slate-950/80 p-4 rounded-lg border border-slate-800">
-                        <h5 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                          <ShieldCheck className="h-4 w-4" /> Verified Facts
-                        </h5>
-                        <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-                          {explainMutation.data.verified_facts.map((f, i) => <li key={i}>{f}</li>)}
-                        </ul>
-                      </div>
-                      
-                      <div className="px-2">
-                        <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
-                          {explainMutation.data.answer}
-                        </p>
-                      </div>
-                      
-                      {explainMutation.data.recommendations.length > 0 && (
-                        <div className="bg-indigo-950/20 p-4 rounded-lg border border-indigo-900/30">
-                          <h5 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                            <Activity className="h-4 w-4" />
-                            Recommendations
-                          </h5>
-                          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-                            {explainMutation.data.recommendations.map((r, i) => <li key={i}>{r}</li>)}
-                          </ul>
+                      {explainMutation.data.response_mode === 'insufficient_data' ? (
+                        <div className="bg-slate-900/50 p-6 rounded-lg border border-amber-900/30">
+                          <h4 className="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5" />
+                            Not enough verified data yet
+                          </h4>
+                          <p className="text-sm text-slate-300 leading-relaxed">{explainMutation.data.answer}</p>
                         </div>
+                      ) : (
+                        <>
+                          <div className="bg-slate-950/80 p-4 rounded-lg border border-slate-800">
+                            <h5 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                              <ShieldCheck className="h-4 w-4" /> Verified Facts
+                            </h5>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
+                              {explainMutation.data.verified_facts.map((f, i) => <li key={i}>{f}</li>)}
+                            </ul>
+                          </div>
+                          
+                          <div className="px-2">
+                            <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                              {explainMutation.data.answer}
+                            </p>
+                          </div>
+                          
+                          {explainMutation.data.recommendations.length > 0 && (
+                            <div className="bg-indigo-950/20 p-4 rounded-lg border border-indigo-900/30">
+                              <h5 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <Activity className="h-4 w-4" />
+                                Recommendations
+                              </h5>
+                              <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
+                                {explainMutation.data.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+                              </ul>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ) : (

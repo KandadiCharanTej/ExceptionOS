@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
-import { List, Activity, Settings, Database, Menu, X, ServerCrash, Home, Bot, AlertTriangle } from 'lucide-react';
+import { List, Activity, Settings, Database, Menu, X, ServerCrash, Home, Bot, AlertTriangle, PlaySquare } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +11,8 @@ import Investigation from './pages/Investigation';
 import Analytics from './pages/Analytics';
 import Datasets from './pages/Datasets';
 import Copilot from './pages/Copilot';
+import Performance from './pages/Performance';
+import Demo from './pages/Demo';
 import { healthCheck } from './services/api';
 
 export function cn(...inputs: ClassValue[]) {
@@ -87,6 +89,16 @@ function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: bool
           <NavLink to="/copilot" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-2", isActive ? "bg-indigo-600/10 text-indigo-400 shadow-[inset_2px_0_0_0_rgba(99,102,241,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
             <Bot className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
             AI Copilot
+          </NavLink>
+          
+          <NavLink to="/performance" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-2", isActive ? "bg-emerald-600/10 text-emerald-400 shadow-[inset_2px_0_0_0_rgba(16,185,129,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
+            <Activity className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
+            Performance
+          </NavLink>
+          
+          <NavLink to="/demo" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-2", isActive ? "bg-purple-600/10 text-purple-400 shadow-[inset_2px_0_0_0_rgba(168,85,247,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
+            <PlaySquare className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
+            Buildathon Demo
           </NavLink>
 
           <div className="pt-4 pb-2">
@@ -223,7 +235,7 @@ function App() {
             </button>
             <div className="text-xs text-slate-500 bg-[#05080F] p-3 rounded text-left border border-[#1E293B] font-mono">
               $ cd openrecon-main<br />
-              $ uvicorn src.exceptionos.api.main:app --reload
+              $ uvicorn exceptionos.api.main:app --reload
             </div>
           </div>
         </div>
@@ -241,6 +253,8 @@ function App() {
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:caseId" element={<Investigation />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/performance" element={<Performance />} />
+          <Route path="/demo" element={<Demo />} />
         </Routes>
       </Layout>
     </BrowserRouter>

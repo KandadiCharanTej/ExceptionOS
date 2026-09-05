@@ -88,3 +88,35 @@ class AIInteraction(Base):
     model_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class EvaluationRun(Base):
+    __tablename__ = "evaluation_runs"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    dataset_id = Column(String, nullable=False)
+    total_records = Column(Integer, default=0)
+    matched_records = Column(Integer, default=0)
+    exception_records = Column(Integer, default=0)
+    processing_time_ms = Column(Float, default=0.0)
+    throughput = Column(Float, default=0.0)
+    precision = Column(Float, default=0.0)
+    recall = Column(Float, default=0.0)
+    accuracy = Column(Float, default=0.0)
+    f1_score = Column(Float, default=0.0)
+    auto_resolved = Column(Integer, default=0)
+    unresolved = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AgentAction(Base):
+    __tablename__ = "agent_actions"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, ForeignKey("cases.id"), nullable=False)
+    recommended_action = Column(String, nullable=False)
+    reason = Column(String, nullable=False)
+    risk_level = Column(String, nullable=False)
+    requires_approval = Column(Boolean, default=True)
+    status = Column(String, nullable=False)
+    actor = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    approved_at = Column(DateTime, nullable=True)
+    executed_at = Column(DateTime, nullable=True)
+
+    case_record = relationship("CaseRecord", backref="agent_actions")

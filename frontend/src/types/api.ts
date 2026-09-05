@@ -101,10 +101,11 @@ export interface CopilotSource {
 }
 
 export interface CopilotResponse {
+  response_mode: 'general' | 'case_analysis' | 'dataset_analysis' | 'insufficient_data';
   answer: string;
   verified_facts: string[];
   recommendations: string[];
-  confidence: string;
+  confidence: number;
   sources: CopilotSource[];
   disclaimer: string;
 }

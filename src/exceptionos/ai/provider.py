@@ -3,6 +3,9 @@ import json
 from abc import ABC, abstractmethod
 from typing import Optional
 
+class ProviderException(Exception):
+    pass
+
 class AIProvider(ABC):
     @abstractmethod
     def generate(self, system_prompt: str, user_prompt: str) -> str:
@@ -37,15 +40,19 @@ class OpenAIAIProvider(AIProvider):
             raise ImportError("Please install openai package: pip install openai")
             
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            response_format={"type": "json_object"}
-        )
-        return response.choices[0].message.content
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"OpenAI API Error: {e}")
+            raise ProviderException(f"AI provider failed: {e}")
 
 class GroqAIProvider(AIProvider):
     def __init__(self, api_key: str, model: str = "llama3-70b-8192"):
@@ -74,7 +81,7 @@ class GroqAIProvider(AIProvider):
             return response.choices[0].message.content
         except Exception as e:
             print(f"Groq API Error: {e}")
-            raise
+            raise ProviderException(f"AI provider failed: {e}")
 
 def get_ai_provider() -> AIProvider:
     import dotenv

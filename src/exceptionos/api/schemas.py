@@ -147,3 +147,43 @@ class BulkDeleteRequest(BaseModel):
 class BulkDeleteResponse(BaseModel):
     deleted_count: int
     message: str
+
+class EvaluationRunResponse(BaseModel):
+    id: str
+    dataset_id: str
+    total_records: int
+    matched_records: int
+    exception_records: int
+    processing_time_ms: float
+    throughput: float
+    precision: float
+    recall: float
+    accuracy: float
+    f1_score: float
+    auto_resolved: int
+    unresolved: int
+    created_at: datetime
+
+class UnresolvedExceptionSchema(BaseModel):
+    case_id: str
+    transaction_id: str
+    classification: str
+    root_cause: str
+    priority: str
+    priority_score: int
+    financial_impact: float
+    reason_unresolved: str
+    recommended_action: str
+
+class AgentActionResponse(BaseModel):
+    id: str
+    case_id: str
+    recommended_action: str
+    reason: str
+    risk_level: str
+    requires_approval: bool
+    status: str
+    actor: str
+    created_at: datetime
+    approved_at: Optional[datetime] = None
+    executed_at: Optional[datetime] = None

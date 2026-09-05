@@ -15,7 +15,7 @@ SCENARIOS = [
     "unknown"
 ]
 
-def generate_datasets(output_dir, num_records, seed=42):
+def generate_datasets(output_dir, num_records, seed=42, scenario_type="NORMAL_RECONCILIATION"):
     random.seed(seed)
     
     os.makedirs(output_dir, exist_ok=True)
@@ -27,6 +27,17 @@ def generate_datasets(output_dir, num_records, seed=42):
     
     start_date = datetime(2026, 9, 1)
     
+    # Define scenario weights based on demo type
+    # [normal, gateway_fee, refund, duplicate, missing, delayed, date_mismatch, unknown]
+    if scenario_type == "EXCEPTION_SPIKE":
+        weights = [40, 5, 5, 10, 20, 5, 10, 5]
+    elif scenario_type == "SETTLEMENT_DELAY":
+        weights = [40, 5, 5, 0, 0, 50, 0, 0]
+    elif scenario_type == "DUPLICATE_INVESTIGATION":
+        weights = [40, 0, 0, 50, 0, 5, 5, 0]
+    else: # NORMAL_RECONCILIATION
+        weights = [90, 2, 2, 1, 1, 2, 1, 1]
+    
     for i in range(1, num_records + 1):
         txn_id = f"TXN-{seed}-{i:05d}"
         
@@ -35,7 +46,7 @@ def generate_datasets(output_dir, num_records, seed=42):
         base_date = start_date + timedelta(days=random.randint(0, 30))
         date_str = base_date.strftime("%Y-%m-%d")
         
-        scenario = random.choice(SCENARIOS)
+        scenario = random.choices(SCENARIOS, weights=weights, k=1)[0]
         
         # Default matching records
         l_rec = {"id": txn_id, "date": date_str, "amount": f"{base_amount:.2f}", "currency": "INR"}

@@ -1,15 +1,33 @@
 # ExceptionOS
 
 **Next-Generation 3-Way Payment Reconciliation & Intelligence Engine**
+**Razorpay AI Buildathon — Track 04: AI Finance Controller**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![React 18](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 
-ExceptionOS is a deterministic, dependency-free reconciliation engine paired with a production-grade Intelligence Workspace. It unifies transactions across three crucial layers — your **Internal Ledger**, your **Payment Gateway**, and your **Bank Settlements** — surfacing exceptions before they hit the books, and providing human analysts with AI-like deterministic root cause analysis.
+ExceptionOS is a deterministic financial reconciliation engine enhanced by bounded AI agents to close the finance-ops loop autonomously without hallucinating financial truths.
 
----
+## Features
+
+- **Multi-Source Reconciliation**: 3-way matching between Ledger, Gateway, and Bank.
+- **Deterministic Source of Truth**: Financial decisions are calculated by code, not LLMs.
+- **Bounded AI Agents**: Agents can only select from a safe list of actions (`REQUEST_ANALYST_REVIEW`, `VERIFY_DUPLICATE`, etc.) based on severity and financial impact.
+- **Evaluation Loop**: Run synthetic batches of 50+ records and measure Match Rate, Precision, Recall, Throughput, and Auto-Resolution Rate.
+- **Honest Exceptions**: AI never hides or artificially resolves cases when deterministic evidence is lacking.
+- **Failure Recovery**: Deterministic reconciliation never fails, even if the AI provider goes offline.
+
+## Running the Buildathon Demo
+
+To demonstrate the full finance-ops loop for Track 04:
+
+1. Start the backend: `cd src && uvicorn exceptionos.api.main:app --reload`
+2. Start the frontend: `cd frontend && npm run dev`
+3. Navigate to `http://localhost:5173/demo`
+4. Choose a predefined scenario (e.g., Exception Spike, Settlement Delay).
+5. Click **Run Finance Ops Loop** to orchestrate synthetic data generation, reconciliation, performance evaluation, priority scoring, and AI analysis.
+6. Observe the machine-generated **Buildathon Proof Report** and the **Honest Unresolved Exceptions**.
 
 ## 🚀 Key Features
 

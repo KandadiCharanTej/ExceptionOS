@@ -3,8 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Play, CheckCircle, AlertTriangle, RefreshCw, Database, Bot, UserCheck, FileText, ShieldCheck, Clock, Zap, BarChart3, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { Badge, PrimaryButton, LoadingState, ErrorState } from '../components/ui';
-import { cn } from '../App';
+import { Badge, PrimaryButton, LoadingState, ErrorState, PageContainer } from '../components/ui';
+import { cn } from '../lib/utils';
 
 export default function Demo() {
   const [selectedScenario, setSelectedScenario] = useState('50_records');
@@ -111,7 +111,7 @@ export default function Demo() {
   const reportSections = proofReport ? parseProofReport(proofReport) : null;
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto pb-12">
+    <PageContainer className="space-y-12">
       {/* === HERO === */}
       <div className="pb-8 border-b border-slate-200/60">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -135,39 +135,40 @@ export default function Demo() {
 
       {/* === SCENARIO SELECTION === */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Select Demo Scenario</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-6">Select Demo Scenario</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {scenarios.map(s => (
             <button
               key={s.id}
               onClick={() => setSelectedScenario(s.id)}
               className={cn(
-                "p-4 rounded-xl border-2 transition-all text-left cursor-pointer",
+                "p-6 rounded-2xl border-2 transition-all duration-300 text-left cursor-pointer hover:-translate-y-1",
                 selectedScenario === s.id 
-                  ? "bg-blue-50 border-blue-400 shadow-sm" 
-                  : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                  ? "bg-blue-50/50 border-blue-500 shadow-md ring-4 ring-blue-50" 
+                  : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg"
               )}
             >
-              <span className="text-lg mb-2 block">{s.icon}</span>
-              <p className={cn("text-sm font-bold", selectedScenario === s.id ? "text-blue-900" : "text-slate-900")}>
-                {s.label}
-              </p>
-              <p className="text-[11px] text-slate-500 mt-0.5">{s.desc}</p>
+              <div className="flex items-center gap-4 mb-3">
+                <span className="text-2xl p-2 bg-white rounded-xl shadow-sm border border-slate-100 block">{s.icon}</span>
+                <p className={cn("text-base font-bold", selectedScenario === s.id ? "text-blue-900" : "text-slate-900")}>
+                  {s.label}
+                </p>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">{s.desc}</p>
             </button>
           ))}
         </div>
       </div>
 
-      {/* === PRIMARY ACTION === */}
-      <div className="flex justify-center">
+      <div className="flex justify-center mt-12 mb-12">
         <PrimaryButton
           onClick={() => runDemoMutation.mutate()}
           disabled={runDemoMutation.isPending}
           className={cn(
-            "w-full md:w-2/3 py-5 text-base shadow-lg transition-all",
+            "w-full md:w-3/5 py-5 text-lg font-bold rounded-2xl shadow-xl transition-all duration-300",
             runDemoMutation.isPending 
-              ? "bg-slate-700" 
-              : "bg-emerald-600 hover:bg-emerald-700 hover:shadow-xl"
+              ? "bg-slate-700 scale-95" 
+              : "bg-emerald-600 hover:bg-emerald-500 hover:scale-[1.02] hover:shadow-emerald-500/30 ring-4 ring-emerald-50"
           )}
         >
           {runDemoMutation.isPending ? (
@@ -179,11 +180,11 @@ export default function Demo() {
       </div>
 
       {activeDatasetId && (
-        <div className="space-y-10">
+        <div className="space-y-14 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
           {/* === PIPELINE VISUALIZATION === */}
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Orchestration Pipeline</h2>
-            <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-sm">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-6">Orchestration Pipeline</h2>
+            <div className="bg-white rounded-2xl border border-slate-200/60 p-8 shadow-sm">
               <div className="flex flex-wrap justify-between items-center gap-3">
                 {pipelineSteps.map((step, idx) => (
                   <div key={idx} className="flex items-center group">
@@ -206,8 +207,8 @@ export default function Demo() {
 
           {/* === RESULTS METRICS === */}
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Performance Results</h2>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-6">Performance Results</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
               <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Records</span>
                 <p className="text-2xl font-extrabold text-slate-900 mt-2">{isLoadingRun ? '—' : currentRun?.total_records}</p>
@@ -222,13 +223,13 @@ export default function Demo() {
                 <span className="text-[11px] font-bold uppercase tracking-widest text-red-500">Exceptions</span>
                 <p className="text-2xl font-extrabold text-red-600 mt-2">{isLoadingRun ? '—' : currentRun?.exception_records}</p>
               </div>
-              <div className="bg-white rounded-xl border border-indigo-200/60 p-5 shadow-sm">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-500">F1 Score</span>
-                <p className="text-2xl font-extrabold text-indigo-600 mt-2">{isLoadingRun ? '—' : `${currentRun?.f1_score?.toFixed(1)}%`}</p>
+              <div className="bg-white rounded-2xl border border-indigo-200/60 p-6 shadow-sm hover:shadow-md transition-shadow">
+                <span className="text-xs font-bold uppercase tracking-widest text-indigo-500">F1 Score</span>
+                <p className="text-3xl font-extrabold text-indigo-600 mt-3">{isLoadingRun ? '—' : `${currentRun?.f1_score?.toFixed(1)}%`}</p>
               </div>
-              <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Throughput</span>
-                <p className="text-2xl font-extrabold text-slate-900 mt-2">{isLoadingRun ? '—' : `${currentRun?.throughput?.toFixed(0)}`}<span className="text-sm font-semibold text-slate-400 ml-1">req/s</span></p>
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-shadow">
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Throughput</span>
+                <p className="text-3xl font-extrabold text-slate-900 mt-3">{isLoadingRun ? '—' : `${currentRun?.throughput?.toFixed(0)}`}<span className="text-base font-semibold text-slate-400 ml-1.5">req/s</span></p>
               </div>
             </div>
           </div>
@@ -237,59 +238,61 @@ export default function Demo() {
             {/* === EXCEPTIONS TABLE (2 cols) === */}
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
                   Honest Unresolved Exceptions
                 </h2>
-                <span className="text-xs text-slate-500 font-medium">
-                  These cases require human or source-system investigation
+                <span className="text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">
+                  Requires human or source-system investigation
                 </span>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
+              <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left text-slate-600">
-                    <thead className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/80 border-b border-slate-200">
+                    <thead className="text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/80 border-b border-slate-200">
                       <tr>
-                        <th className="px-5 py-3.5">Transaction</th>
-                        <th className="px-5 py-3.5">Classification</th>
-                        <th className="px-5 py-3.5">Priority</th>
-                        <th className="px-5 py-3.5">Impact</th>
-                        <th className="px-5 py-3.5">Action</th>
+                        <th className="px-6 py-4">Transaction</th>
+                        <th className="px-6 py-4">Classification</th>
+                        <th className="px-6 py-4">Priority</th>
+                        <th className="px-6 py-4">Impact</th>
+                        <th className="px-6 py-4">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {isLoadingExceptions ? (
-                        <tr><td colSpan={5} className="p-8 text-center text-slate-500 text-xs">
-                          <RefreshCw className="h-4 w-4 animate-spin mx-auto mb-2 text-blue-600" />
+                        <tr><td colSpan={5} className="p-10 text-center text-slate-500 text-sm">
+                          <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-3 text-blue-600" />
                           Loading exceptions...
                         </td></tr>
                       ) : exceptions?.length === 0 ? (
-                        <tr><td colSpan={5} className="p-8 text-center">
-                          <CheckCircle className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
-                          <p className="text-sm font-semibold text-emerald-700">No unresolved exceptions</p>
+                        <tr><td colSpan={5} className="p-10 text-center">
+                          <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
+                          <p className="text-base font-semibold text-emerald-700">No unresolved exceptions</p>
                         </td></tr>
                       ) : (
                         exceptions?.map((exc: any) => (
-                          <tr key={exc.case_id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="px-5 py-3.5 font-mono font-bold text-slate-900 text-xs">{exc.transaction_id}</td>
-                            <td className="px-5 py-3.5">
-                              <Badge variant="error">{exc.classification.replace('_', ' ')}</Badge>
+                          <tr key={exc.case_id} className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="px-6 py-4 font-mono font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors">{exc.transaction_id}</td>
+                            <td className="px-6 py-4">
+                              <Badge variant="error" className="py-1 px-2.5">{exc.classification.replace('_', ' ')}</Badge>
                             </td>
-                            <td className="px-5 py-3.5">
+                            <td className="px-6 py-4">
                               <span className={cn(
-                                "text-xs font-bold",
+                                "text-sm font-bold flex items-center gap-1.5",
                                 exc.priority === 'CRITICAL' ? "text-red-600" :
                                 exc.priority === 'HIGH' ? "text-amber-600" : "text-slate-500"
                               )}>
+                                {exc.priority === 'CRITICAL' && <div className="w-1.5 h-1.5 rounded-full bg-red-600" />}
+                                {exc.priority === 'HIGH' && <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />}
                                 {exc.priority}
                               </span>
                             </td>
-                            <td className="px-5 py-3.5 font-mono text-red-600 font-semibold text-xs">
+                            <td className="px-6 py-4 font-mono text-red-600 font-bold text-sm">
                               ${exc.financial_impact.toFixed(2)}
                             </td>
-                            <td className="px-5 py-3.5">
-                              <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                            <td className="px-6 py-4">
+                              <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
                                 {exc.recommended_action?.replace(/_/g, ' ')}
                               </span>
                             </td>
@@ -306,9 +309,9 @@ export default function Demo() {
             <div className="space-y-6">
               {/* System Reliability */}
               <div>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">System Reliability</h2>
-                <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
-                  <div className="p-5 space-y-3.5">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4">System Reliability</h2>
+                <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
+                  <div className="p-6 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <CheckCircle className="w-4 h-4 text-emerald-500" />
@@ -353,24 +356,24 @@ export default function Demo() {
 
               {/* Buildathon Proof */}
               <div>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Buildathon Proof</h2>
-                <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4">Buildathon Proof</h2>
+                <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl shadow-slate-900/20">
                   {reportSections ? (
                     <div className="divide-y divide-slate-100">
                       {reportSections.map((section, idx) => (
-                        <div key={idx} className="p-4">
-                          <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">{section.title}</h4>
-                          <pre className="text-xs text-slate-700 whitespace-pre-wrap font-mono leading-relaxed">{section.content}</pre>
+                        <div key={idx} className="p-5 border-b border-slate-800 last:border-0">
+                          <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">{section.title}</h4>
+                          <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">{section.content}</pre>
                         </div>
                       ))}
                     </div>
                   ) : proofReport ? (
-                    <div className="p-4">
-                      <pre className="text-xs text-slate-700 whitespace-pre-wrap font-mono leading-relaxed max-h-[300px] overflow-y-auto">{proofReport}</pre>
+                    <div className="p-5">
+                      <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono leading-relaxed max-h-[400px] overflow-y-auto custom-scrollbar">{proofReport}</pre>
                     </div>
                   ) : (
-                    <div className="p-6 text-center text-xs text-slate-500">
-                      <Zap className="w-5 h-5 mx-auto mb-2 text-slate-400" />
+                    <div className="p-8 text-center text-sm text-slate-400">
+                      <Zap className="w-6 h-6 mx-auto mb-3 text-slate-500 opacity-50" />
                       Proof report will generate after pipeline completion.
                     </div>
                   )}
@@ -380,6 +383,6 @@ export default function Demo() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

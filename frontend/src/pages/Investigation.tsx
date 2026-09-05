@@ -1,12 +1,39 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Shield, CheckCircle, Clock, Lightbulb, Activity, BrainCircuit, Columns, Edit3, Save, Tag, List, Bot, Sparkles, AlertCircle, ExternalLink } from 'lucide-react';
+import {
+  ArrowLeft, Shield, CheckCircle, Clock, Lightbulb, Activity, BrainCircuit,
+  Edit3, Save, Tag, List, Bot, Sparkles, AlertCircle, ArrowDown
+} from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-
 import { getCase, resolveCase, verifyResolution, updateAnnotations, getCaseHistory, explainCase } from '../services/api';
-import { Badge, StatusBadge, PriorityBadge, SecondaryButton, PrimaryButton, LoadingState, ErrorState } from '../components/ui';
-import { cn } from '../App';
+import {
+  Badge, StatusBadge, PriorityBadge, SecondaryButton, PrimaryButton,
+  LoadingState, ErrorState, Surface, SectionHeader, PageContainer
+} from '../components/ui';
+import { cn } from '../lib/utils';
+
+function SourceColumn({ label, txn, color }: { label: string; txn: any; color: string }) {
+  const missing = !txn;
+  const amount = missing ? 'Missing' : `${txn.currency} ${txn.amount.toFixed(2)}`;
+  const aligned = !missing;
+
+  return (
+    <div className={cn('flex-1 text-center', missing && 'opacity-60')}>
+      <div className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4', color)}>
+        {label}
+      </div>
+      <p className={cn('text-2xl font-bold font-mono tabular-nums', missing ? 'text-red-400' : 'text-slate-900')}>{amount}</p>
+      <div className="mt-3 space-y-1 text-xs text-slate-500">
+        <p><span className="text-slate-400">ID </span>{txn?.key || '—'}</p>
+        <p><span className="text-slate-400">Date </span>{txn?.date || '—'}</p>
+      </div>
+      <div className={cn('mt-4 inline-flex items-center gap-1 text-xs font-semibold', aligned ? 'text-emerald-600' : 'text-red-500')}>
+        {aligned ? <><CheckCircle className="w-3.5 h-3.5" /> Present</> : <><AlertCircle className="w-3.5 h-3.5" /> Missing</>}
+      </div>
+    </div>
+  );
+}
 
 export default function Investigation() {
   const { caseId } = useParams<{ caseId: string }>();
@@ -17,10 +44,10 @@ export default function Investigation() {
 
   const [actionInput, setActionInput] = useState('');
   const [isEditingAnnotations, setIsEditingAnnotations] = useState(false);
-  const [analystClassification, setAnalystClassification] = useState<string>('');
-  const [notes, setNotes] = useState<string>('');
-  const [tagsInput, setTagsInput] = useState<string>('');
-  const [explainModalOpen, setExplainModalOpen] = useState(false);
+  const [analystClassification, setAnalystClassification] = useState('');
+  const [notes, setNotes] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [explainOpen, setExplainOpen] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['case', caseId, datasetId],
@@ -34,69 +61,43 @@ export default function Investigation() {
     enabled: !!caseId,
   });
 
-  const explainMutation = useMutation({
-    mutationFn: () => explainCase(caseId!),
-  });
-
+  const explainMutation = useMutation({ mutationFn: () => explainCase(caseId!) });
   const annotationsMutation = useMutation({
-    mutationFn: () => updateAnnotations(
-      caseId!,
-      {
-        analyst_classification: analystClassification || undefined,
-        notes: notes || undefined,
-        tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-      },
-      datasetId
-    ),
+    mutationFn: () => updateAnnotations(caseId!, {
+      analyst_classification: analystClassification || undefined,
+      notes: notes || undefined,
+      tags: tagsInput ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean) : undefined,
+    }, datasetId),
     onSuccess: () => {
-      toast.success('Annotations saved successfully');
+      toast.success('Annotations saved');
       setIsEditingAnnotations(false);
-      queryClient.invalidateQueries({ queryKey: ['case', caseId, datasetId] });
-      queryClient.invalidateQueries({ queryKey: ['caseHistory', caseId, datasetId] });
+      queryClient.invalidateQueries({ queryKey: ['case', caseId] });
     },
-    onError: (err: any) => {
-      toast.error(err.message || 'Failed to save annotations');
-    }
+    onError: (err: any) => toast.error(err.message),
   });
-
   const resolveMutation = useMutation({
     mutationFn: () => resolveCase(caseId!, actionInput, 'ANALYST', datasetId),
     onSuccess: () => {
       toast.success('Resolution recorded');
-      queryClient.invalidateQueries({ queryKey: ['case', caseId, datasetId] });
-      queryClient.invalidateQueries({ queryKey: ['caseHistory', caseId, datasetId] });
+      queryClient.invalidateQueries({ queryKey: ['case', caseId] });
     },
-    onError: (err: any) => {
-      toast.error(err.message || 'Failed to record resolution');
-    }
+    onError: (err: any) => toast.error(err.message),
   });
-
   const verifyMutation = useMutation({
     mutationFn: () => verifyResolution(caseId!, datasetId),
     onSuccess: () => {
-      toast.success('Verification pass finished');
-      queryClient.invalidateQueries({ queryKey: ['case', caseId, datasetId] });
-      queryClient.invalidateQueries({ queryKey: ['caseHistory', caseId, datasetId] });
+      toast.success('Verification complete');
+      queryClient.invalidateQueries({ queryKey: ['case', caseId] });
     },
-    onError: (err: any) => {
-      toast.error(err.message || 'Verification failed');
-    }
+    onError: (err: any) => toast.error(err.message),
   });
 
-  if (isLoading) {
-    return <LoadingState message="Retrieving transaction evidence and 3-way reconciliation record..." />;
-  }
-
+  if (isLoading) return <LoadingState message="Loading investigation workspace..." />;
   if (isError || !data) {
     return (
-      <div className="space-y-6 max-w-7xl mx-auto">
-        <SecondaryButton onClick={() => navigate('/cases')}>
-          <ArrowLeft className="w-4 h-4" /> Back to Queue
-        </SecondaryButton>
-        <ErrorState 
-          title="Unable to load case details"
-          message={(error as Error)?.message || 'The investigation record could not be retrieved. Check that the backend is running and try again.'} 
-        />
+      <div className="space-y-6">
+        <SecondaryButton onClick={() => navigate('/cases')}><ArrowLeft className="w-4 h-4" /> Investigations</SecondaryButton>
+        <ErrorState title="Case not found" message={(error as Error)?.message} />
       </div>
     );
   }
@@ -104,327 +105,168 @@ export default function Investigation() {
   const resolveResult = (data as any).manual_resolution;
   const verifyResult = (data as any).verification_result;
   const history = historyData?.events || [];
-
-  // Helper to get amount display
-  const getAmountDisplay = (txn: any) => {
-    if (!txn) return { value: 'Missing', missing: true };
-    return { value: `${txn.currency} ${txn.amount.toFixed(2)}`, missing: false };
-  };
-
-  const ledgerAmt = getAmountDisplay(data.transactions.ledger);
-  const gatewayAmt = getAmountDisplay(data.transactions.gateway);
-  const bankAmt = getAmountDisplay(data.transactions.bank);
+  const isMatched = data.classification === 'matched' || data.classification === 'MATCHED';
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12">
-      {/* === CASE HEADER === */}
-      <div className="pb-6 border-b border-slate-200/60">
-        <div className="flex items-center gap-3 mb-4">
-          <SecondaryButton onClick={() => navigate(datasetId ? `/cases?dataset_id=${datasetId}` : '/cases')} className="py-1.5 px-3 text-xs">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Queue
-          </SecondaryButton>
-          <div className="h-4 w-px bg-slate-200"></div>
-          <Badge variant="secondary" className="px-3 py-1">
-            <Shield className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
-            Deterministic Analysis
-          </Badge>
-        </div>
-        
+    <PageContainer className="space-y-12">
+      {/* Header */}
+      <div>
+        <button
+          onClick={() => navigate(datasetId ? `/cases?dataset_id=${datasetId}` : '/cases')}
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-5 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" /> Investigations
+        </button>
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1.5">Transaction Investigation</p>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 font-mono">{data.case_id}</h1>
-            <div className="flex items-center gap-3 mt-3">
-              <StatusBadge status={data.classification} />
+            <h1 className="text-3xl font-extrabold font-mono tracking-tight text-slate-900">{data.case_id}</h1>
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <StatusBadge status={isMatched ? 'MATCHED' : data.classification} />
               {(data as any).priority && <PriorityBadge priority={(data as any).priority} />}
-              <StatusBadge status={(data as any).status || data.classification} />
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Confidence</p>
-              <p className="text-2xl font-extrabold text-slate-900">{data.root_cause.confidence_score}%</p>
-            </div>
+          <div className="text-right">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Confidence</p>
+            <p className="text-3xl font-bold tabular-nums text-slate-900">{data.root_cause.confidence_score}%</p>
           </div>
         </div>
       </div>
 
-      {/* === 3-WAY COMPARISON === */}
+      {/* 3-Way Comparison */}
       <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <Columns className="w-4 h-4 text-blue-600" />
-          3-Way Transaction Evidence
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Ledger */}
-          <div className={cn(
-            "rounded-xl border-2 p-5 transition-all",
-            data.transactions.ledger ? "bg-white border-blue-200" : "bg-red-50/50 border-red-200"
-          )}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-blue-600">Ledger</span>
-              {data.transactions.ledger ? (
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              ) : (
-                <Badge variant="error">Missing</Badge>
-              )}
-            </div>
-            <div className={cn("text-xl font-extrabold font-mono tracking-tight", ledgerAmt.missing ? "text-red-400" : "text-slate-900")}>
-              {ledgerAmt.value}
-            </div>
-            <div className="mt-3 space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">ID</span>
-                <span className="font-mono font-medium text-slate-700">{data.transactions.ledger?.key || '—'}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Date</span>
-                <span className="font-medium text-slate-700">{data.transactions.ledger?.date || '—'}</span>
-              </div>
-            </div>
+        <SectionHeader title="3-Way Transaction Comparison" description="Ledger → Gateway → Bank alignment" />
+        <Surface className="p-8">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-4">
+            <SourceColumn label="Ledger" txn={data.transactions.ledger} color="bg-blue-50 text-blue-700" />
+            <ArrowDown className="w-5 h-5 text-slate-300 rotate-90 md:rotate-0 shrink-0 hidden md:block" />
+            <SourceColumn label="Gateway" txn={data.transactions.gateway} color="bg-emerald-50 text-emerald-700" />
+            <ArrowDown className="w-5 h-5 text-slate-300 rotate-90 md:rotate-0 shrink-0 hidden md:block" />
+            <SourceColumn label="Bank" txn={data.transactions.bank} color="bg-indigo-50 text-indigo-700" />
           </div>
-
-          {/* Gateway */}
-          <div className={cn(
-            "rounded-xl border-2 p-5 transition-all",
-            data.transactions.gateway ? "bg-white border-emerald-200" : "bg-red-50/50 border-red-200"
-          )}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">Gateway</span>
-              {data.transactions.gateway ? (
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              ) : (
-                <Badge variant="error">Missing</Badge>
-              )}
-            </div>
-            <div className={cn("text-xl font-extrabold font-mono tracking-tight", gatewayAmt.missing ? "text-red-400" : "text-slate-900")}>
-              {gatewayAmt.value}
-            </div>
-            <div className="mt-3 space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">ID</span>
-                <span className="font-mono font-medium text-slate-700">{data.transactions.gateway?.key || '—'}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Date</span>
-                <span className="font-medium text-slate-700">{data.transactions.gateway?.date || '—'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bank */}
-          <div className={cn(
-            "rounded-xl border-2 p-5 transition-all",
-            data.transactions.bank ? "bg-white border-indigo-200" : "bg-red-50/50 border-red-200"
-          )}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">Bank</span>
-              {data.transactions.bank ? (
-                <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-              ) : (
-                <Badge variant="error">Missing</Badge>
-              )}
-            </div>
-            <div className={cn("text-xl font-extrabold font-mono tracking-tight", bankAmt.missing ? "text-red-400" : "text-slate-900")}>
-              {bankAmt.value}
-            </div>
-            <div className="mt-3 space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">ID</span>
-                <span className="font-mono font-medium text-slate-700">{data.transactions.bank?.key || '—'}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Date</span>
-                <span className="font-medium text-slate-700">{data.transactions.bank?.date || '—'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        </Surface>
       </div>
 
-      {/* === INVESTIGATION GRID === */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
-        {/* LEFT: Deterministic Analysis + AI */}
+      <div className="grid xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2 space-y-8">
-          {/* Deterministic Root Cause */}
-          <div className="bg-white rounded-xl border border-blue-200/80 overflow-hidden shadow-sm">
-            <div className="px-6 py-4 bg-blue-50/40 border-b border-blue-100 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-md bg-blue-100">
-                  <BrainCircuit className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-blue-900">Deterministic Findings</h3>
-                  <p className="text-[11px] text-blue-600/80">Source of truth — verified by reconciliation engine</p>
-                </div>
+          {/* Deterministic Analysis */}
+          <Surface className="overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+              <BrainCircuit className="w-4 h-4 text-blue-600" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Deterministic Analysis</h3>
+                <p className="text-[11px] text-slate-500">Verified by reconciliation engine</p>
               </div>
-              <span className="text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1.5 rounded-full border border-blue-200">
-                {data.root_cause.confidence_score}% Confidence
-              </span>
             </div>
             <div className="p-6 space-y-5">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Confidence</p>
+                  <p className="text-xl font-bold text-slate-900">{data.root_cause.confidence_score}%</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Root Cause</p>
+                  <p className="text-sm font-bold text-slate-900 capitalize">{data.root_cause.cause?.replace(/_/g, ' ') || 'No Exception'}</p>
+                </div>
+              </div>
               <div>
-                <h3 className="text-xl font-extrabold text-slate-900 capitalize mb-2">
-                  {data.root_cause.cause ? data.root_cause.cause.replace(/_/g, ' ') : 'No Exception'}
-                </h3>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Recommendation</p>
                 <p className="text-sm text-slate-600 leading-relaxed">{data.root_cause.explanation}</p>
               </div>
-
-              <div className="bg-slate-50 rounded-xl p-5 border border-slate-200/80">
-                <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Validated Evidence</h4>
-                <div className="space-y-2.5">
-                  {data.root_cause.supporting_evidence.map((ev: string, idx: number) => (
-                    <div key={idx} className="flex items-start bg-white p-3 rounded-lg border border-slate-200/80 text-xs text-slate-800">
-                      <CheckCircle className="h-4 w-4 text-emerald-600 mr-2.5 shrink-0 mt-0.5" />
-                      <span>{ev}</span>
+              {data.root_cause.supporting_evidence.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Validated Evidence</p>
+                  {data.root_cause.supporting_evidence.map((ev: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50 rounded-lg p-3">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" /> {ev}
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
-          </div>
+          </Surface>
 
-          {/* AI Investigation Panel */}
-          <div className="bg-white rounded-xl border border-indigo-200/60 overflow-hidden shadow-sm">
-            <div className="px-6 py-4 bg-indigo-50/30 border-b border-indigo-100 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-md bg-indigo-100">
-                  <Sparkles className="h-4 w-4 text-indigo-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-indigo-900">AI Investigation</h3>
-                  <p className="text-[11px] text-indigo-600/80">Advisory analysis — requires human verification</p>
-                </div>
+          {/* AI Panel */}
+          <Surface className="overflow-hidden border-indigo-100">
+            <div className="px-6 py-4 bg-[#0F172A] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-300" />
+                <span className="text-sm font-semibold text-white">AI Investigation</span>
               </div>
-              <SecondaryButton 
-                onClick={() => {
-                  setExplainModalOpen(true);
-                  if (!explainMutation.data && !explainMutation.isPending) {
-                    explainMutation.mutate();
-                  }
-                }}
-                className="text-xs py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white border-0"
+              <SecondaryButton
+                onClick={() => { setExplainOpen(true); if (!explainMutation.data && !explainMutation.isPending) explainMutation.mutate(); }}
+                className="text-xs py-1.5 bg-white/10 border-white/10 text-white hover:bg-white/20"
               >
-                <Bot className="h-3.5 w-3.5" />
-                {explainMutation.data ? 'View Explanation' : 'Generate Explanation'}
+                <Bot className="w-3.5 h-3.5" /> Generate Explanation
               </SecondaryButton>
             </div>
-            {explainModalOpen && (
+            {explainOpen && (
               <div className="p-6">
                 {explainMutation.isPending ? (
-                  <div className="flex items-center gap-3 text-slate-600 text-sm py-6 justify-center">
-                    <Activity className="animate-spin h-5 w-5 text-indigo-600" />
-                    <span>Analyzing deterministic evidence with AI...</span>
+                  <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+                    <Activity className="animate-spin w-4 h-4 text-indigo-600" /> Analyzing evidence...
                   </div>
                 ) : explainMutation.data ? (
-                  <div className="space-y-4">
-                    <div className="bg-indigo-50/40 rounded-lg p-4 border border-indigo-100">
-                      <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
-                        {explainMutation.data.answer}
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-slate-400 italic">
-                      This AI analysis is advisory only. The deterministic engine findings above remain the source of truth.
-                    </p>
+                  <div>
+                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{explainMutation.data.answer}</p>
+                    <p className="text-[11px] text-slate-400 mt-3 italic">Advisory only — deterministic findings remain authoritative.</p>
                   </div>
                 ) : (
-                  <p className="text-sm text-red-600 py-4 text-center">Unable to generate AI explanation. Try again.</p>
+                  <p className="text-sm text-red-600">Unable to generate explanation.</p>
                 )}
               </div>
             )}
-            {!explainModalOpen && (
-              <div className="p-6 text-center text-sm text-slate-500">
-                Click "Generate Explanation" to get AI-powered analysis of this case.
-              </div>
-            )}
-          </div>
+          </Surface>
 
-          {/* Action Center */}
-          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+          {/* Resolution */}
+          <Surface className="overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Shield className="h-4 w-4 text-indigo-600" />
-                Action Center
+                <Shield className="w-4 h-4 text-indigo-600" /> Resolution Actions
               </h3>
             </div>
-            <div className="p-6 space-y-5">
-              {/* Recommended Action */}
-              <div className="bg-indigo-50/40 border border-indigo-100 rounded-xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Lightbulb className="w-4 h-4 text-indigo-600" />
-                    <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Recommended Action</h4>
-                  </div>
-                  {data.resolution_recommendation.requires_human_approval ? (
-                    <Badge variant="warning">Requires Approval</Badge>
-                  ) : (
-                    <Badge variant="success">Auto-Verifiable</Badge>
-                  )}
+            <div className="p-6 space-y-4">
+              <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Recommended</span>
+                  {data.resolution_recommendation.requires_human_approval && <Badge variant="warning">Requires Approval</Badge>}
                 </div>
-                <p className="text-sm font-bold text-slate-900 mb-1">
-                  {data.resolution_recommendation.recommended_action.replace(/_/g, ' ').toUpperCase()}
-                </p>
-                <p className="text-xs text-slate-600 leading-relaxed">{data.resolution_recommendation.explanation}</p>
+                <p className="text-sm font-semibold text-slate-900 capitalize">{data.resolution_recommendation.recommended_action.replace(/_/g, ' ')}</p>
+                <p className="text-xs text-slate-600 mt-1">{data.resolution_recommendation.explanation}</p>
               </div>
 
-              {/* Resolution */}
               {!resolveResult ? (
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
-                  <label className="block text-xs font-bold text-slate-700">Record Resolution Action</label>
-                  <div className="flex gap-3">
-                    <input 
-                      type="text" 
-                      value={actionInput}
-                      onChange={(e) => setActionInput(e.target.value)}
-                      className="flex-1 bg-white border border-slate-200 text-slate-900 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm"
-                      placeholder="Describe the resolution action taken..."
-                    />
-                    <PrimaryButton
-                      onClick={() => resolveMutation.mutate()}
-                      disabled={resolveMutation.isPending || !actionInput}
-                      className="text-xs py-2.5 px-5"
-                    >
-                      {resolveMutation.isPending ? <Activity className="h-4 w-4 animate-spin" /> : 'Record Action'}
-                    </PrimaryButton>
-                  </div>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={actionInput}
+                    onChange={(e) => setActionInput(e.target.value)}
+                    placeholder="Describe resolution action..."
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                  />
+                  <PrimaryButton onClick={() => resolveMutation.mutate()} disabled={!actionInput || resolveMutation.isPending}>
+                    {resolveMutation.isPending ? <Activity className="animate-spin w-4 h-4" /> : 'Record'}
+                  </PrimaryButton>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-emerald-800 uppercase">Action Recorded</h4>
-                      <p className="text-xs font-medium text-slate-800 mt-0.5">"{resolveResult.action_taken}"</p>
+                      <p className="text-xs font-bold text-emerald-800 uppercase">Action Recorded</p>
+                      <p className="text-sm text-slate-800 mt-0.5">"{resolveResult.action_taken}"</p>
                     </div>
-                    <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
                   </div>
-
-                  {!verifyResult ? (
-                    <div className="flex justify-end">
-                      <PrimaryButton
-                        onClick={() => verifyMutation.mutate()}
-                        disabled={verifyMutation.isPending}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-xs py-2.5"
-                      >
-                        {verifyMutation.isPending ? <Activity className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
-                        Verify Resolution
-                      </PrimaryButton>
-                    </div>
-                  ) : (
-                    <div className={cn("border rounded-xl p-4 flex items-start gap-3",
-                      verifyResult.status === 'VERIFIED_RESOLVED' 
-                        ? 'bg-emerald-50 border-emerald-200' 
-                        : 'bg-amber-50 border-amber-200'
-                    )}>
-                      {verifyResult.status === 'VERIFIED_RESOLVED' ? (
-                        <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                      )}
+                  {!verifyResult && (
+                    <PrimaryButton onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending} className="ml-auto">
+                      Verify Resolution
+                    </PrimaryButton>
+                  )}
+                  {verifyResult && (
+                    <div className={cn('rounded-xl p-4 border flex gap-3', verifyResult.status === 'VERIFIED_RESOLVED' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200')}>
+                      <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
                       <div>
-                        <h4 className={cn("text-xs font-bold uppercase", verifyResult.status === 'VERIFIED_RESOLVED' ? 'text-emerald-900' : 'text-amber-900')}>
-                          {verifyResult.status.replace('_', ' ')}
-                        </h4>
+                        <p className="text-xs font-bold uppercase">{verifyResult.status.replace(/_/g, ' ')}</p>
                         <p className="text-xs text-slate-700 mt-0.5">{verifyResult.explanation}</p>
                       </div>
                     </div>
@@ -432,150 +274,101 @@ export default function Investigation() {
                 </div>
               )}
             </div>
-          </div>
+          </Surface>
         </div>
 
-        {/* RIGHT SIDEBAR: Annotations + Timeline + Audit */}
-        <div className="xl:col-span-1 space-y-6">
-          {/* Analyst Annotations */}
-          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
-            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <Edit3 className="h-3.5 w-3.5 text-purple-600" />
-                Analyst Annotations
-              </h3>
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Annotations */}
+          <Surface className="overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Edit3 className="w-3.5 h-3.5" /> Analyst Notes
+              </span>
               {!isEditingAnnotations ? (
                 <button onClick={() => {
                   setAnalystClassification(data.analyst_classification || '');
                   setNotes(data.notes || '');
-                  setTagsInput(data.tags ? data.tags.join(', ') : '');
+                  setTagsInput(data.tags?.join(', ') || '');
                   setIsEditingAnnotations(true);
-                }} className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer">
-                  Edit
-                </button>
+                }} className="text-xs text-blue-600 font-semibold cursor-pointer">Edit</button>
               ) : (
-                <button onClick={() => annotationsMutation.mutate()} disabled={annotationsMutation.isPending} className="text-xs text-emerald-700 hover:text-emerald-900 font-semibold flex items-center cursor-pointer disabled:opacity-50">
-                  {annotationsMutation.isPending ? <Activity className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
-                  Save
+                <button onClick={() => annotationsMutation.mutate()} disabled={annotationsMutation.isPending} className="text-xs text-emerald-700 font-semibold flex items-center gap-1 cursor-pointer">
+                  <Save className="w-3 h-3" /> Save
                 </button>
               )}
             </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Override Classification</label>
-                {isEditingAnnotations ? (
-                  <select 
-                    value={analystClassification}
-                    onChange={(e) => setAnalystClassification(e.target.value)}
-                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg text-sm px-3 py-2 focus:outline-none focus:border-blue-500 shadow-sm"
-                  >
+            <div className="p-5 space-y-4 text-sm">
+              {isEditingAnnotations ? (
+                <>
+                  <select value={analystClassification} onChange={(e) => setAnalystClassification(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm">
                     <option value="">No Override</option>
-                    <option value="matched">Matched (False Positive)</option>
-                    <option value="missing_in_ledger">Missing in Ledger</option>
-                    <option value="missing_in_gateway">Missing in Gateway</option>
-                    <option value="missing_in_bank">Missing in Bank</option>
-                    <option value="amount_mismatch">Amount Mismatch</option>
-                    <option value="date_mismatch">Date Mismatch</option>
+                    <option value="matched">Matched</option>
                     <option value="duplicate_detected">Duplicate</option>
-                    <option value="system_error">System Error</option>
+                    <option value="amount_mismatch">Amount Mismatch</option>
                   </select>
-                ) : (
-                  <div className="text-sm font-medium text-slate-800">{data.analyst_classification ? data.analyst_classification.replace('_', ' ') : <span className="text-slate-400 italic">None</span>}</div>
-                )}
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
-                {isEditingAnnotations ? (
-                  <textarea 
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg text-sm px-3 py-2 focus:outline-none focus:border-blue-500 resize-none shadow-sm"
-                    placeholder="Add investigation notes..."
-                  />
-                ) : (
-                  <div className="text-sm text-slate-700 whitespace-pre-wrap">{data.notes || <span className="text-slate-400 italic">No notes</span>}</div>
-                )}
-              </div>
-              <div>
-                <label className="flex items-center text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                  <Tag className="w-3 h-3 mr-1" /> Tags
-                </label>
-                {isEditingAnnotations ? (
-                  <input 
-                    type="text" 
-                    value={tagsInput}
-                    onChange={(e) => setTagsInput(e.target.value)}
-                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg text-sm px-3 py-2 focus:outline-none focus:border-blue-500 shadow-sm"
-                    placeholder="Comma separated tags"
-                  />
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {data.tags && data.tags.length > 0 ? (
-                      data.tags.map((tag: string, i: number) => <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>)
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">No tags</span>
-                    )}
-                  </div>
-                )}
-              </div>
+                  <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none" placeholder="Notes..." />
+                  <input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Tags, comma separated" />
+                </>
+              ) : (
+                <>
+                  <p className="text-slate-700">{data.notes || <span className="text-slate-400 italic">No notes</span>}</p>
+                  {data.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {data.tags.map((t: string, i: number) => <Badge key={i} variant="secondary"><Tag className="w-3 h-3 mr-1" />{t}</Badge>)}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          </div>
+          </Surface>
 
-          {/* Evidence Timeline */}
-          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
-            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5 text-blue-600" />
-                Evidence Timeline
-              </h3>
+          {/* Timeline */}
+          <Surface className="overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> Evidence Timeline
+              </span>
             </div>
             <div className="p-5">
-              <div className="relative border-l-2 border-slate-200 ml-2 space-y-5">
+              <div className="relative border-l-2 border-slate-200 ml-2 space-y-6">
                 {data.timeline.map((event: any, idx: number) => (
                   <div key={idx} className="relative pl-5">
-                    <div className={cn("absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full ring-4 ring-white",
-                      event.event_type.includes('exception') ? 'bg-amber-500' : 'bg-blue-500'
-                    )} />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{event.source}</span>
-                    <p className="text-xs font-semibold text-slate-900 mt-0.5">{event.description}</p>
+                    <div className={cn('absolute -left-[5px] top-1 w-2 h-2 rounded-full ring-4 ring-white', event.event_type.includes('exception') ? 'bg-amber-500' : 'bg-emerald-500')} />
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{event.source}</p>
+                    <p className="text-xs font-medium text-slate-800 mt-0.5">{event.description}</p>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          </Surface>
 
-          {/* Audit Trail */}
-          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
-            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <List className="h-3.5 w-3.5 text-slate-600" />
-                Audit Trail
-              </h3>
+          {/* Audit */}
+          <Surface className="overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <List className="w-3.5 h-3.5" /> Audit Trail
+              </span>
             </div>
             <div className="p-5">
               {history.length > 0 ? (
                 <div className="relative border-l-2 border-slate-200 ml-2 space-y-5">
                   {history.map((event: any, idx: number) => (
                     <div key={idx} className="relative pl-5">
-                      <div className="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full ring-4 ring-white bg-slate-400" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        {event.event_type.replace(/_/g, ' ')}
-                      </span>
-                      <p className="text-xs font-medium text-slate-800 mt-0.5">{event.description}</p>
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">
-                        {new Date(event.timestamp).toLocaleString()}
-                      </span>
+                      <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-slate-400 ring-4 ring-white" />
+                      <p className="text-[10px] font-bold uppercase text-slate-500">{event.event_type.replace(/_/g, ' ')}</p>
+                      <p className="text-xs text-slate-700 mt-0.5">{event.description}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{new Date(event.timestamp).toLocaleString()}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic text-center py-4">No audit history recorded yet.</p>
+                <p className="text-xs text-slate-400 italic text-center py-4">No audit history yet.</p>
               )}
             </div>
-          </div>
+          </Surface>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="100%" height="100%" style="background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <defs>
+    <filter id="flow-shadow" x="-4%" y="-4%" width="108%" height="112%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0F172A" flood-opacity="0.05" />
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.04" />
+    </filter>
+
+    <linearGradient id="flow-header-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1E3A8A" />
+    </linearGradient>
+
+    <!-- Markers -->
+    <marker id="flow-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0284C7" />
+    </marker>
+    <marker id="flow-arrow-down" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 1 0 L 5 8 L 9 0 z" fill="#0284C7" />
+    </marker>
+    <marker id="flow-arrow-left" viewBox="0 0 10 10" refX="4" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 8 1 L 0 5 L 8 9 z" fill="#7C3AED" />
+    </marker>
+
+    <!-- Background Pattern -->
+    <pattern id="flow-dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#E2E8F0" />
+    </pattern>
+  </defs>
+
+  <rect width="100%" height="100%" fill="url(#flow-dots)" />
+
+  <!-- Header Banner -->
+  <g transform="translate(30, 24)">
+    <rect width="1140" height="74" rx="12" fill="url(#flow-header-grad)" filter="url(#flow-shadow)" />
+    <text x="32" y="36" fill="#FFFFFF" font-size="20" font-weight="700">ExceptionOS — End-to-End User Investigation &amp; Resolution Flow</text>
+    <text x="32" y="58" fill="#94A3B8" font-size="12">From Multi-Source Ingestion to Bounded AI Synthesis and Immutable Human-Governed Resolution</text>
+    
+    <rect x="940" y="20" width="168" height="34" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <text x="1024" y="41" fill="#38BDF8" font-size="11" font-weight="700" text-anchor="middle">FINANCIAL OPERATOR UX</text>
+  </g>
+
+  <!-- ==================================================================== -->
+  <!-- ROW 1: STEPS 1 TO 4 (LEFT TO RIGHT) -->
+  <!-- ==================================================================== -->
+  <g transform="translate(30, 124)">
+    <!-- STEP 1: USER CONNECT / UPLOAD -->
+    <g transform="translate(0, 0)">
+      <rect width="250" height="190" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#F1F5F9" />
+      <text x="32" y="38" fill="#0F172A" font-size="14" font-weight="700" text-anchor="middle">1</text>
+      <text x="60" y="32" fill="#0F172A" font-size="13" font-weight="700">Connect / Upload</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Data Connection Hub</text>
+      <line x1="16" y1="58" x2="234" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in Datasets.tsx:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• Upload Ledger, Gateway &amp; Bank CSVs</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• Or select one-click Preset Scenarios</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• Auto-schema validation &amp; UUID assignment</text>
+      
+      <rect x="16" y="150" width="218" height="24" rx="4" fill="#EFF6FF" />
+      <text x="125" y="166" fill="#1D4ED8" font-size="9" font-weight="700" text-anchor="middle">Input: 3 Data Streams</text>
+    </g>
+
+    <!-- Arrow 1 -> 2 -->
+    <line x1="250" y1="95" x2="286" y2="95" stroke="#0284C7" stroke-width="2" marker-end="url(#flow-arrow)" />
+
+    <!-- STEP 2: RUN DETERMINISTIC RECONCILIATION -->
+    <g transform="translate(296, 0)">
+      <rect width="250" height="190" rx="12" fill="#FFFFFF" stroke="#0284C7" stroke-width="1.5" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#E0F2FE" />
+      <text x="32" y="38" fill="#0369A1" font-size="14" font-weight="700" text-anchor="middle">2</text>
+      <text x="60" y="32" fill="#0369A1" font-size="13" font-weight="700">Run Reconciliation</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Deterministic Core</text>
+      <line x1="16" y1="58" x2="234" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in matching.py:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• Phase 1: Ledger ↔ Gateway exact match</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• Phase 2: Gateway ↔ Bank window match</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• Pure Python Decimal integer cents</text>
+
+      <rect x="16" y="150" width="218" height="24" rx="4" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1" />
+      <text x="125" y="166" fill="#15803D" font-size="9" font-weight="700" text-anchor="middle">🔒 Zero AI Involvement</text>
+    </g>
+
+    <!-- Arrow 2 -> 3 -->
+    <line x1="546" y1="95" x2="582" y2="95" stroke="#0284C7" stroke-width="2" marker-end="url(#flow-arrow)" />
+
+    <!-- STEP 3: VIEW FINANCIAL HEALTH -->
+    <g transform="translate(592, 0)">
+      <rect width="250" height="190" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#F1F5F9" />
+      <text x="32" y="38" fill="#0F172A" font-size="14" font-weight="700" text-anchor="middle">3</text>
+      <text x="60" y="32" fill="#0F172A" font-size="13" font-weight="700">View Financial Health</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Executive Command Center</text>
+      <line x1="16" y1="58" x2="234" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in Dashboard.tsx:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• Monitor Match Rate % &amp; Total Volume</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• View Total Dollars At Risk breakdown</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• Triage Priority P1 Critical breaches</text>
+
+      <rect x="16" y="150" width="218" height="24" rx="4" fill="#FEF2F2" />
+      <text x="125" y="166" fill="#991B1B" font-size="9" font-weight="700" text-anchor="middle">Surfaces Discrepancies</text>
+    </g>
+
+    <!-- Arrow 3 -> 4 -->
+    <line x1="842" y1="95" x2="878" y2="95" stroke="#0284C7" stroke-width="2" marker-end="url(#flow-arrow)" />
+
+    <!-- STEP 4: INVESTIGATE EXCEPTIONS -->
+    <g transform="translate(888, 0)">
+      <rect width="252" height="190" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#F1F5F9" />
+      <text x="32" y="38" fill="#0F172A" font-size="14" font-weight="700" text-anchor="middle">4</text>
+      <text x="60" y="32" fill="#0F172A" font-size="13" font-weight="700">Investigate Cases</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Deep-Dive Workspace</text>
+      <line x1="16" y1="58" x2="236" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in Cases.tsx:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• Filter by class: Missing, Timing, Amount</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• Inspect raw 3-way transaction JSONs</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• Review deterministic Root Cause score</text>
+
+      <rect x="16" y="150" width="220" height="24" rx="4" fill="#FFFBEB" />
+      <text x="126" y="166" fill="#B45309" font-size="9" font-weight="700" text-anchor="middle">Selects Case for AI</text>
+    </g>
+  </g>
+
+  <!-- Connective Snake Arrow from Step 4 down to Step 5 -->
+  <path d="M 1014 314 L 1014 360" stroke="#7C3AED" stroke-width="2" marker-end="url(#flow-arrow-down)" />
+
+  <!-- ==================================================================== -->
+  <!-- ROW 2: STEPS 5 TO 8 (RIGHT TO LEFT TO COMPLETE THE LOOP) -->
+  <!-- ==================================================================== -->
+  <g transform="translate(30, 362)">
+    <!-- STEP 8 (LEFTMOST): IMMUTABLE AUDIT TRAIL -->
+    <g transform="translate(0, 0)">
+      <rect width="250" height="190" rx="12" fill="#FFFFFF" stroke="#059669" stroke-width="1.5" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#DCFCE7" />
+      <text x="32" y="38" fill="#15803D" font-size="14" font-weight="700" text-anchor="middle">8</text>
+      <text x="60" y="32" fill="#15803D" font-size="13" font-weight="700">Audit Trail</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Permanent State Store</text>
+      <line x1="16" y1="58" x2="234" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in models.py:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• Immutable case_events timeline write</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• ResolutionRecord with user attribution</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• Complete reconstructible audit history</text>
+
+      <rect x="16" y="150" width="218" height="24" rx="4" fill="#F0FDF4" />
+      <text x="125" y="166" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">✓ Case Resolved &amp; Audited</text>
+    </g>
+
+    <!-- Arrow 7 -> 8 -->
+    <line x1="296" y1="95" x2="260" y2="95" stroke="#059669" stroke-width="2" marker-end="url(#flow-arrow-left)" />
+
+    <!-- STEP 7: HUMAN DECISION (SOVEREIGN GATE) -->
+    <g transform="translate(296, 0)">
+      <rect width="250" height="190" rx="12" fill="#FFFFFF" stroke="#EA580C" stroke-width="1.5" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#FFEDD5" />
+      <text x="32" y="38" fill="#C2410C" font-size="14" font-weight="700" text-anchor="middle">7</text>
+      <text x="60" y="32" fill="#C2410C" font-size="13" font-weight="700">Human Decision</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Final Sovereign Control</text>
+      <line x1="16" y1="58" x2="234" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in Investigation.tsx:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• Operator reviews risk &amp; evidence</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• Clicks [Approve Action] or [Reject]</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• Inputs mandatory resolution notes</text>
+
+      <rect x="16" y="150" width="218" height="24" rx="4" fill="#FFF7ED" stroke="#FDBA74" stroke-width="1" />
+      <text x="125" y="166" fill="#C2410C" font-size="9" font-weight="700" text-anchor="middle">Human Retains Sovereign Power</text>
+    </g>
+
+    <!-- Arrow 6 -> 7 -->
+    <line x1="592" y1="95" x2="556" y2="95" stroke="#EA580C" stroke-width="2" marker-end="url(#flow-arrow-left)" />
+
+    <!-- STEP 6: REVIEW AI RECOMMENDATION -->
+    <g transform="translate(592, 0)">
+      <rect width="250" height="190" rx="12" fill="#FFFFFF" stroke="#8B5CF6" stroke-width="1.2" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#EDE9FE" />
+      <text x="32" y="38" fill="#6D28D9" font-size="14" font-weight="700" text-anchor="middle">6</text>
+      <text x="60" y="32" fill="#6D28D9" font-size="13" font-weight="700">Review AI Advice</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Bounded Action Whitelist</text>
+      <line x1="16" y1="58" x2="234" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in Copilot.tsx:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• Inspect proposed action &amp; rationale</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• Risk rating verified: LOW / MED / HIGH</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• requires_approval = True enforced</text>
+
+      <rect x="16" y="150" width="218" height="24" rx="4" fill="#F5F3FF" />
+      <text x="125" y="166" fill="#6D28D9" font-size="9" font-weight="700" text-anchor="middle">No Autonomous Write Allowed</text>
+    </g>
+
+    <!-- Arrow 5 -> 6 -->
+    <line x1="888" y1="95" x2="852" y2="95" stroke="#7C3AED" stroke-width="2" marker-end="url(#flow-arrow-left)" />
+
+    <!-- STEP 5: ASK AI COPILOT -->
+    <g transform="translate(888, 0)">
+      <rect width="252" height="190" rx="12" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.5" filter="url(#flow-shadow)" />
+      <rect x="16" y="16" width="32" height="32" rx="8" fill="#EDE9FE" />
+      <text x="32" y="38" fill="#6D28D9" font-size="14" font-weight="700" text-anchor="middle">5</text>
+      <text x="60" y="32" fill="#6D28D9" font-size="13" font-weight="700">Ask AI Copilot</text>
+      <text x="60" y="46" fill="#64748B" font-size="10">Verified Context Read</text>
+      <line x1="16" y1="58" x2="236" y2="58" stroke="#F1F5F9" stroke-width="1" />
+
+      <text x="16" y="80" fill="#334155" font-size="10" font-weight="600">Action in Copilot.tsx:</text>
+      <text x="16" y="98" fill="#475569" font-size="10">• User asks: "Explain why txn failed"</text>
+      <text x="16" y="116" fill="#475569" font-size="10">• context_builder passes verified facts</text>
+      <text x="16" y="134" fill="#475569" font-size="10">• LLM synthesizes root-cause summary</text>
+
+      <rect x="16" y="150" width="220" height="24" rx="4" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1" />
+      <text x="126" y="166" fill="#6D28D9" font-size="9" font-weight="700" text-anchor="middle">🛡️ Read-Only Verified Fact Feed</text>
+    </g>
+  </g>
+
+  <!-- Footer Principle Band -->
+  <g transform="translate(30, 574)">
+    <rect width="1140" height="42" rx="8" fill="#0F172A" />
+    <text x="570" y="26" fill="#F8FAFC" font-size="11" font-weight="600" text-anchor="middle">
+      COMPLETE HUMAN-IN-THE-LOOP CONTROL: <tspan fill="#38BDF8">Financial Data</tspan> ➔ <tspan fill="#34D399">Deterministic Engine</tspan> ➔ <tspan fill="#C4B5FD">Bounded AI Explanation</tspan> ➔ <tspan fill="#FDBA74">Human Decision</tspan> ➔ <tspan fill="#94A3B8">Immutable Audit Log</tspan>
+    </text>
+  </g>
+</svg>

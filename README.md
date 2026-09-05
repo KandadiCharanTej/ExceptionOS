@@ -50,39 +50,17 @@ These systems routinely fall out of sync:
 
 ## 💡 The Solution
 
-ExceptionOS replaces fragile manual reconciliation with an **automated, deterministic 3-way reconciliation pipeline** paired with **bounded AI intelligence**:
+ExceptionOS replaces fragile manual reconciliation with an **automated, deterministic 3-way reconciliation pipeline** paired with **bounded AI intelligence**.
 
-```mermaid
-flowchart TD
-    subgraph S1 [1. Multi-Source Ingestion]
-        A1[Internal Ledger]
-        A2[Payment Gateway]
-        A3[Bank Settlement]
-    end
+---
 
-    subgraph S2 [2. Deterministic 3-Way Engine]
-        B1[Schema Normalization]
-        B2[Phase 1: Ledger <--> Gateway]
-        B3[Phase 2: Gateway <--> Bank]
-    end
+## 🏗️ Architecture
 
-    subgraph S3 [3. Intelligence Layer]
-        C1[7 Exception Classifications]
-        C2[Root Cause Hypothesis Engine]
-        C3[Priority & Risk Engine]
-    end
+ExceptionOS operates on a strict architectural mandate: **Deterministic systems establish financial truth; bounded AI operates only on verified context to explain and recommend; humans retain sovereign decision governance.**
 
-    subgraph S4 [4. Bounded AI & Governance]
-        D1[Bounded AI Copilot & Resolution Agent]
-        D2[Human-in-the-Loop Approval Gate]
-        D3[Immutable Audit Trail & Evaluation Run]
-    end
+![ExceptionOS System Architecture](docs/assets/architecture.svg)
 
-    A1 & A2 & A3 --> B1
-    B1 --> B2 --> B3
-    B3 --> C1 --> C2 --> C3
-    C3 --> D1 --> D2 --> D3
-```
+👉 *For the complete 9-layer technical breakdown, user flow diagram, and database ER schema, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).*
 
 ---
 

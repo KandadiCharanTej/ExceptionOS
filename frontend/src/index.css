@@ -1,54 +1,62 @@
 @import "tailwindcss";
 
 :root {
-  --background: #05080F;
-  --foreground: #f8fafc;
+  --background: #F8FAFC;
+  --foreground: #0F172A;
   
-  --card: #0A0F1C;
-  --card-foreground: #f8fafc;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
   
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
   
-  --secondary: #1E293B;
-  --secondary-foreground: #f8fafc;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #334155;
   
-  --muted: #1E293B;
-  --muted-foreground: #94a3b8;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
   
-  --accent: #1E293B;
-  --accent-foreground: #f8fafc;
+  --accent: #DBEAFE;
+  --accent-foreground: #1E3A8A;
   
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --success: #10B981;
+  --success-foreground: #FFFFFF;
   
-  --border: #1E293B;
-  --input: #1E293B;
-  --ring: #3b82f6;
+  --warning: #F59E0B;
+  --warning-foreground: #FFFFFF;
+
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
   
-  --radius: 0.5rem;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #2563EB;
+  
+  --radius: 0.75rem;
 }
 
-/* Custom Scrollbar */
+/* Premium Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #05080F; 
+  background: transparent; 
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B; 
+  background: #CBD5E1; 
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155; 
+  background: #94A3B8; 
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @theme {

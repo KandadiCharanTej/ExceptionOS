@@ -33,11 +33,11 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex h-screen w-full items-center justify-center bg-[#05080F] p-4">
-          <div className="max-w-md w-full bg-[#0A0F1C] border border-[#1E293B] rounded-lg p-6 shadow-xl text-center">
+        <div className="flex h-screen w-full items-center justify-center bg-slate-50 p-4">
+          <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center">
             <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-white mb-2">Application Error</h2>
-            <p className="text-sm text-slate-400 mb-6">{this.state.error?.message || "An unexpected error occurred."}</p>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Application Error</h2>
+            <p className="text-sm text-slate-500 mb-6">{this.state.error?.message || "An unexpected error occurred."}</p>
             <button
               onClick={() => window.location.reload()}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
@@ -65,66 +65,72 @@ function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: bool
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-screen w-64 bg-[#0A0F1C] text-slate-300 flex flex-col border-r border-[#1E293B] z-50 transition-transform duration-300 ease-in-out lg:translate-x-0",
+        "fixed left-0 top-0 h-screen w-64 bg-[#0F172A] text-slate-300 flex flex-col z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-xl lg:shadow-none",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="h-16 flex items-center px-6 border-b border-[#1E293B] justify-between">
+        <div className="h-16 flex items-center px-6 border-b border-slate-800 justify-between">
           <div className="flex items-center">
-            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-blue-900/20">
+            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-sm">
               <Database className="h-4 w-4 text-white" />
             </div>
             <span className="text-lg font-bold text-white tracking-tight">ExceptionOS</span>
           </div>
-          <button className="lg:hidden text-slate-400 hover:text-white" onClick={() => setIsOpen(false)}>
+          <button className="lg:hidden text-slate-400 hover:text-white transition-colors" onClick={() => setIsOpen(false)}>
             <X className="h-5 w-5" />
           </button>
         </div>
         
-        <div className="flex-1 py-6 flex flex-col gap-1 px-3">
-          <NavLink to="/" end className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium", isActive ? "bg-blue-600/10 text-blue-400 shadow-[inset_2px_0_0_0_rgba(59,130,246,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
-            <Home className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
-            Dashboard
-          </NavLink>
-          
-          <NavLink to="/copilot" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-2", isActive ? "bg-indigo-600/10 text-indigo-400 shadow-[inset_2px_0_0_0_rgba(99,102,241,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
-            <Bot className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
-            AI Copilot
-          </NavLink>
-          
-          <NavLink to="/performance" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-2", isActive ? "bg-emerald-600/10 text-emerald-400 shadow-[inset_2px_0_0_0_rgba(16,185,129,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
-            <Activity className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
-            Performance
-          </NavLink>
-          
-          <NavLink to="/demo" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-2", isActive ? "bg-purple-600/10 text-purple-400 shadow-[inset_2px_0_0_0_rgba(168,85,247,1)]" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
-            <PlaySquare className={cn("h-5 w-5 mr-3 transition-colors", "group-hover:text-slate-200")} />
-            Buildathon Demo
-          </NavLink>
+        <div className="flex-1 py-6 flex flex-col gap-6 px-4 overflow-y-auto">
+          <div>
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Overview</p>
+            <NavLink to="/" end className={({isActive}) => cn("flex items-center px-3 py-2 rounded-lg transition-all duration-200 group text-sm font-medium", isActive ? "bg-blue-600/15 text-blue-400" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200")}>
+              <Home className="h-4 w-4 mr-3" />
+              Overview
+            </NavLink>
+          </div>
 
-          <div className="pt-4 pb-2">
-            <p className="px-4 text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Reconciliation</p>
-            <NavLink to="/datasets" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium", isActive ? "bg-blue-600/10 text-blue-400" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
-              <Database className="h-5 w-5 mr-3" />
-              Datasets
+          <div>
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Operations</p>
+            <NavLink to="/cases" className={({isActive}) => cn("flex items-center px-3 py-2 rounded-lg transition-all duration-200 group text-sm font-medium mb-1", isActive ? "bg-blue-600/15 text-blue-400" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200")}>
+              <List className="h-4 w-4 mr-3" />
+              Investigations
             </NavLink>
-            <NavLink to="/cases" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-1", isActive ? "bg-blue-600/10 text-blue-400" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
-              <List className="h-5 w-5 mr-3" />
-              Cases
+            <NavLink to="/datasets" className={({isActive}) => cn("flex items-center px-3 py-2 rounded-lg transition-all duration-200 group text-sm font-medium", isActive ? "bg-blue-600/15 text-blue-400" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200")}>
+              <Database className="h-4 w-4 mr-3" />
+              Reconciliation
             </NavLink>
-            <NavLink to="/analytics" className={({isActive}) => cn("flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mt-1", isActive ? "bg-blue-600/10 text-blue-400" : "text-slate-400 hover:bg-[#1E293B] hover:text-slate-200")}>
-              <Activity className="h-5 w-5 mr-3" />
+          </div>
+
+          <div>
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Intelligence</p>
+            <NavLink to="/copilot" className={({isActive}) => cn("flex items-center px-3 py-2 rounded-lg transition-all duration-200 group text-sm font-medium mb-1", isActive ? "bg-indigo-600/20 text-indigo-400" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200")}>
+              <Bot className="h-4 w-4 mr-3" />
+              AI Intelligence
+            </NavLink>
+            <NavLink to="/analytics" className={({isActive}) => cn("flex items-center px-3 py-2 rounded-lg transition-all duration-200 group text-sm font-medium", isActive ? "bg-blue-600/15 text-blue-400" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200")}>
+              <Activity className="h-4 w-4 mr-3" />
               Analytics
+            </NavLink>
+          </div>
+
+          <div>
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">System</p>
+            <NavLink to="/performance" className={({isActive}) => cn("flex items-center px-3 py-2 rounded-lg transition-all duration-200 group text-sm font-medium mb-1", isActive ? "bg-emerald-600/15 text-emerald-400" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200")}>
+              <Settings className="h-4 w-4 mr-3" />
+              Performance
+            </NavLink>
+            <NavLink to="/demo" className={({isActive}) => cn("flex items-center px-3 py-2 rounded-lg transition-all duration-200 group text-sm font-medium", isActive ? "bg-purple-600/15 text-purple-400" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200")}>
+              <PlaySquare className="h-4 w-4 mr-3" />
+              Demo Mode
             </NavLink>
           </div>
         </div>
         
-        <div className="p-4 border-t border-[#1E293B] flex flex-col gap-2">
-          <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer" className="flex items-center text-sm px-3 py-2 rounded-md text-slate-400 hover:text-white hover:bg-[#1E293B]/50 transition-colors">
-            <Activity className="h-4 w-4 mr-3 text-slate-500" />
-            API Docs
+        <div className="p-4 border-t border-slate-800 flex flex-col gap-1">
+          <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer" className="flex items-center text-xs font-medium px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors">
+            API Reference
           </a>
-          <a href="https://github.com/KandadiCharanTej/ExceptionOS" target="_blank" rel="noreferrer" className="flex items-center text-sm px-3 py-2 rounded-md text-slate-400 hover:text-white hover:bg-[#1E293B]/50 transition-colors">
-            <Settings className="h-4 w-4 mr-3 text-slate-500" />
+          <a href="https://github.com/KandadiCharanTej/ExceptionOS" target="_blank" rel="noreferrer" className="flex items-center text-xs font-medium px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors">
             GitHub
           </a>
         </div>
@@ -142,29 +148,33 @@ function Header({ toggleSidebar }: { toggleSidebar: () => void }) {
   });
 
   return (
-    <div className="h-16 bg-[#0A0F1C] border-b border-[#1E293B] flex items-center px-4 lg:px-8 sticky top-0 z-30 shadow-sm">
+    <div className="h-16 bg-white border-b border-slate-200 flex items-center px-4 lg:px-8 sticky top-0 z-30 shadow-sm">
       <button 
-        className="mr-4 lg:hidden p-2 text-slate-400 hover:text-white hover:bg-[#1E293B] rounded-md transition-colors"
+        className="mr-4 lg:hidden p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
         onClick={toggleSidebar}
       >
         <Menu className="h-5 w-5" />
       </button>
 
-      <div className="flex items-center gap-3">
+      <div className="flex-1">
+        {/* We can use location hooks here in the future to show dynamic page titles */}
+      </div>
+
+      <div className="flex items-center gap-2 mr-6 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200">
         <div className={cn(
           "w-2 h-2 rounded-full",
           isError ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : 
           isSuccess ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : 
           "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse"
         )}></div>
-        <span className="text-sm font-medium text-slate-300">
-          {isError ? "Backend Disconnected" : isSuccess ? "System Operational" : "Connecting..."}
+        <span className="text-xs font-semibold text-slate-600 tracking-wide">
+          {isError ? "System Offline" : isSuccess ? "Engine Active" : "Connecting..."}
         </span>
       </div>
 
-      <div className="ml-auto flex items-center space-x-4">
-        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-blue-900/20">
-          A
+      <div className="flex items-center space-x-4">
+        <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-600 shadow-sm transition-transform hover:scale-105 cursor-pointer">
+          U
         </div>
       </div>
     </div>
@@ -175,11 +185,11 @@ function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[#05080F] font-sans text-slate-200">
+    <div className="flex h-screen bg-background font-sans text-foreground">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       <div className="flex-1 lg:ml-64 flex flex-col overflow-hidden">
         <Header toggleSidebar={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
           <ErrorBoundary>
             {children}
           </ErrorBoundary>
@@ -206,10 +216,10 @@ function App() {
 
   if (isApiAvailable === null) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-900">
         <div className="animate-pulse flex flex-col items-center">
-          <Database className="h-12 w-12 text-blue-500 mb-4 animate-bounce" />
-          <h2 className="text-xl font-semibold tracking-tight text-slate-200">Starting ExceptionOS...</h2>
+          <Database className="h-12 w-12 text-blue-600 mb-4 animate-bounce" />
+          <h2 className="text-xl font-semibold tracking-tight text-slate-700">Starting ExceptionOS...</h2>
         </div>
       </div>
     );
@@ -217,13 +227,13 @@ function App() {
 
   if (isApiAvailable === false) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#0A0F1C] border border-[#1E293B] rounded-lg shadow-2xl p-8 text-center">
-          <div className="mx-auto w-16 h-16 bg-red-500/10 flex items-center justify-center rounded-full mb-6 border border-red-500/20">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl shadow-lg p-8 text-center">
+          <div className="mx-auto w-16 h-16 bg-red-50 flex items-center justify-center rounded-full mb-6 border border-red-100">
             <ServerCrash className="h-8 w-8 text-red-500" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">API Unavailable</h1>
-          <p className="text-slate-400 mb-8">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">API Unavailable</h1>
+          <p className="text-slate-500 mb-8">
             The ExceptionOS intelligence engine cannot be reached. Please ensure the FastAPI backend is running on port 8000.
           </p>
           <div className="flex flex-col gap-3">
@@ -233,7 +243,7 @@ function App() {
             >
               Retry Connection
             </button>
-            <div className="text-xs text-slate-500 bg-[#05080F] p-3 rounded text-left border border-[#1E293B] font-mono">
+            <div className="text-xs text-slate-500 bg-slate-100 p-3 rounded text-left border border-slate-200 font-mono">
               $ cd openrecon-main<br />
               $ uvicorn exceptionos.api.main:app --reload
             </div>

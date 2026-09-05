@@ -1,19 +1,34 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { Bot, Send, Loader2, Sparkles, ShieldCheck, ChevronRight, Activity, UploadCloud, X, FileText, Play, MessageSquare, Lightbulb } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bot, Send, ShieldCheck, Loader2, Sparkles, ChevronRight, Activity, UploadCloud, X, FileText, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getDatasets, askCopilot, prioritizeCases, uploadReconciliationFiles } from '../services/api';
+
+import { askCopilot, getDatasets, uploadReconciliationFiles, prioritizeCases } from '../services/api';
 import type { CopilotResponse } from '../types/api';
-import { Card, CardContent, Badge } from '../components/ui';
+import { Badge, PrimaryButton, SecondaryButton } from '../components/ui';
 import { cn } from '../App';
 
+interface Message {
+  role: 'user' | 'assistant';
+  content?: string;
+  data?: CopilotResponse;
+}
+
+const SUGGESTED_QUESTIONS = [
+  { q: "What requires attention first?", icon: "🚨" },
+  { q: "Give me an executive summary.", icon: "📊" },
+  { q: "Which exception is most expensive?", icon: "💰" },
+  { q: "What pattern appears most frequently?", icon: "🔍" },
+  { q: "What are the biggest problems?", icon: "⚠️" },
+];
+
 export default function Copilot() {
-  const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
-  const [messages, setMessages] = useState<{role: 'user'|'ai', content: string, data?: CopilotResponse}[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  
+
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [ledgerFile, setLedgerFile] = useState<File | null>(null);
   const [gatewayFile, setGatewayFile] = useState<File | null>(null);
@@ -23,22 +38,28 @@ export default function Copilot() {
   const gatewayRef = useRef<HTMLInputElement>(null);
   const bankRef = useRef<HTMLInputElement>(null);
 
+  const { data: datasetsData } = useQuery({
+    queryKey: ['datasets'],
+    queryFn: getDatasets,
+  });
+
+  const datasets = datasetsData?.datasets || [];
+  const selectedDataset = datasets.find(d => d.id === selectedDatasetId);
+
   const uploadMutation = useMutation({
     mutationFn: (files: { ledger: File, gateway: File, bank: File }) => 
       uploadReconciliationFiles(files.ledger, files.gateway, files.bank),
-    onSuccess: (data) => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['datasets'] });
-      toast.success('Dataset uploaded successfully');
+      toast.success('Dataset uploaded & reconciled!');
+      setSelectedDatasetId(res.dataset_id);
       setIsUploadModalOpen(false);
       setLedgerFile(null);
       setGatewayFile(null);
       setBankFile(null);
-      if (data && data.dataset_id) {
-        setSelectedDatasetId(data.dataset_id);
-      }
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || error.message || 'Failed to upload dataset');
+      toast.error(error.response?.data?.detail || error.message || 'Failed to upload files');
     }
   });
 
@@ -49,30 +70,27 @@ export default function Copilot() {
     }
     uploadMutation.mutate({ ledger: ledgerFile, gateway: gatewayFile, bank: bankFile });
   };
-  
+
   const FileSelector = ({ label, file, setFile, inputRef }: any) => (
     <div className={cn(
-      "flex flex-col space-y-2 p-4 rounded-lg border border-dashed transition-all duration-200",
-      file ? "bg-emerald-500/5 border-emerald-500/30" : "bg-[#0A0F1C] border-[#1E293B] hover:border-slate-600"
+      "flex flex-col space-y-2 p-4 rounded-xl border border-dashed transition-all duration-200",
+      file ? "bg-emerald-50 border-emerald-300" : "bg-slate-50 border-slate-200 hover:border-slate-300"
     )}>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-300">{label} CSV</span>
+        <span className="text-sm font-semibold text-slate-800">{label} CSV</span>
         {file && <Badge variant="success">Ready</Badge>}
       </div>
       <div className="flex items-center mt-2">
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="px-3 py-1.5 bg-[#1E293B] border border-slate-700 rounded text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
-        >
+        <SecondaryButton onClick={() => inputRef.current?.click()} className="text-xs py-1 px-3">
           {file ? 'Change File' : 'Choose File'}
-        </button>
-        <span className="text-sm text-slate-400 ml-3 truncate max-w-[200px]">
+        </SecondaryButton>
+        <span className="text-xs text-slate-500 ml-3 truncate max-w-[200px]">
           {file ? (
-            <span className="flex items-center text-emerald-400 font-medium">
-              <FileText className="w-4 h-4 mr-1" />
+            <span className="flex items-center text-emerald-700 font-semibold">
+              <FileText className="w-3.5 h-3.5 mr-1 text-emerald-600" />
               {file.name}
-              <button onClick={() => setFile(null)} className="ml-2 text-slate-500 hover:text-red-400 cursor-pointer">
-                <X className="w-4 h-4" />
+              <button onClick={() => setFile(null)} className="ml-2 text-slate-400 hover:text-red-600 cursor-pointer">
+                <X className="w-3.5 h-3.5" />
               </button>
             </span>
           ) : 'Select file'}
@@ -92,238 +110,248 @@ export default function Copilot() {
     </div>
   );
 
-  const { data: datasetsData, isLoading: datasetsLoading } = useQuery({
-    queryKey: ['datasets'],
-    queryFn: getDatasets,
-  });
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const chatMutation = useMutation({
-    mutationFn: (message: string) => askCopilot(message, selectedDatasetId || undefined),
-    onSuccess: (data) => {
-      setMessages(prev => [...prev, { role: 'ai', content: '', data }]);
+    mutationFn: (query: string) => askCopilot(query, selectedDatasetId || undefined),
+    onSuccess: (data: CopilotResponse) => {
+      setMessages(prev => [...prev, { role: 'assistant', data }]);
     },
     onError: (error: any) => {
-      if (error.response?.status === 503) {
-        setMessages(prev => [...prev, { role: 'ai', content: '⚠️ AI service temporarily unavailable. Please try again.' }]);
-        return;
-      }
-      const errDetail = error.response?.data?.detail || error.message;
-      setMessages(prev => [...prev, { role: 'ai', content: `AI Copilot error: ${errDetail}` }]);
+      toast.error(error.message || 'Failed to get answer from Copilot');
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "Sorry, I encountered an error retrieving deterministic facts for this query. Please check your backend connection." 
+      }]);
     }
   });
 
   const prioritizeMutation = useMutation({
     mutationFn: () => prioritizeCases(selectedDatasetId),
-    onSuccess: (data) => {
-      setMessages(prev => [...prev, { role: 'user', content: 'What should I investigate first?' }]);
-      setMessages(prev => [...prev, { role: 'ai', content: '', data }]);
+    onSuccess: (data: CopilotResponse) => {
+      setMessages(prev => [...prev, { role: 'assistant', data }]);
     },
-    onError: (error: any) => {
-      if (error.response?.status === 503) {
-        setMessages(prev => [...prev, { role: 'ai', content: '⚠️ AI service temporarily unavailable. Please try again.' }]);
-        return;
-      }
-      const errDetail = error.response?.data?.detail || error.message;
-      setMessages(prev => [...prev, { role: 'ai', content: `AI Copilot error: ${errDetail}` }]);
-    }
+    onError: (err: any) => toast.error(err.message)
   });
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, chatMutation.isPending]);
+  const handleSend = (textToSend?: string) => {
+    const q = textToSend || input;
+    if (!q.trim() || chatMutation.isPending) return;
 
-  const handleSend = (msg: string) => {
-    if (!msg.trim()) return;
-    setMessages(prev => [...prev, { role: 'user', content: msg }]);
-    setInput('');
-    chatMutation.mutate(msg);
+    setMessages(prev => [...prev, { role: 'user', content: q }]);
+    if (!textToSend) setInput('');
+    chatMutation.mutate(q);
   };
 
-  const SUGGESTED_QUESTIONS = [
-    "What are the biggest problems in this dataset?",
-    "Give me an executive summary.",
-    "Which root cause occurs most frequently?"
-  ];
-
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)]">
-      <div className="mb-6 flex justify-between items-center shrink-0">
+    <div className="space-y-0 max-w-7xl mx-auto flex flex-col h-[calc(100vh-6rem)]">
+      {/* === HEADER === */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b border-slate-200/60 shrink-0">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white mb-1 flex items-center gap-2">
-            <Bot className="h-8 w-8 text-blue-400" />
-            AI Finance Copilot
-          </h2>
-          <p className="text-slate-400">Ask questions about your verified financial reconciliation data.</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1">Intelligence</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">AI Finance Copilot</h1>
+          <p className="text-xs text-slate-500 mt-1">Ask questions about verified reconciliation intelligence.</p>
         </div>
-        
-        <div className="flex items-end gap-2">
-          <div className="w-64">
-            <label className="block text-sm font-medium text-slate-400 mb-1">Select Dataset Context</label>
-            <select 
+        <div className="flex items-center gap-3">
+          {/* Dataset Context Selector */}
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Analyzing:</span>
+            <select
               value={selectedDatasetId}
               onChange={(e) => setSelectedDatasetId(e.target.value)}
-              className="w-full bg-[#05080F] border border-[#1E293B] text-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
-              disabled={datasetsLoading}
+              className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
             >
-              <option value="">Global Context (All Data)</option>
-              {datasetsData?.datasets.map(d => (
-                <option key={d.id} value={d.id}>{d.name} ({d.total_cases} cases)</option>
+              <option value="">Global Intelligence Context</option>
+              {datasets.map(d => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({d.total_cases} records)
+                </option>
               ))}
             </select>
           </div>
-          <button 
+          
+          <PrimaryButton 
             onClick={() => setIsUploadModalOpen(true)}
-            className="p-2.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors flex items-center justify-center cursor-pointer"
-            title="Upload New Dataset"
+            className="text-xs py-2 px-3 bg-indigo-600 hover:bg-indigo-700"
           >
-            <UploadCloud className="w-5 h-5" />
-          </button>
+            <UploadCloud className="w-4 h-4" />
+            Upload
+          </PrimaryButton>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
-        {/* Sidebar */}
-        <div className="lg:col-span-1 space-y-4 overflow-y-auto">
-          <Card className="bg-blue-950/20 border-blue-900/50">
-            <CardContent className="pt-6">
-              <h3 className="font-semibold text-blue-400 flex items-center gap-2 mb-4">
-                <ShieldCheck className="h-5 w-5" />
-                Verified Data Only
-              </h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                The Copilot explains and analyzes data, but the <span className="font-semibold text-white">Deterministic Engine</span> remains the absolute source of truth. AI cannot modify financial amounts or system classifications.
-              </p>
-            </CardContent>
-          </Card>
+      {/* === MAIN AREA === */}
+      <div className="flex gap-6 flex-1 min-h-0 pt-6">
+        {/* Left: Suggested Questions */}
+        <div className="w-64 shrink-0 space-y-5 overflow-y-auto hidden lg:block">
+          {/* Trust Indicator */}
+          <div className="bg-indigo-50/60 border border-indigo-200/80 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck className="h-4 w-4 text-indigo-600" />
+              <span className="text-xs font-bold text-indigo-900">Verified Data Only</span>
+            </div>
+            <p className="text-[11px] text-indigo-950/70 leading-relaxed">
+              The Copilot explains data but the <span className="font-bold">Deterministic Engine</span> remains the source of truth. AI cannot alter financial amounts.
+            </p>
+          </div>
 
-          <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Suggested Questions</h4>
-            {SUGGESTED_QUESTIONS.map((q, i) => (
-              <button 
-                key={i}
-                onClick={() => handleSend(q)}
-                className="w-full text-left p-3 rounded-lg bg-[#0A0F1C] border border-[#1E293B] hover:border-blue-500/50 hover:bg-[#1E293B]/50 transition-colors text-sm text-slate-300 flex items-center justify-between group"
-              >
-                {q}
-                <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-blue-400" />
-              </button>
-            ))}
-            
-            {selectedDatasetId && (
-              <button 
-                onClick={() => prioritizeMutation.mutate()}
-                disabled={prioritizeMutation.isPending}
-                className="w-full text-left p-3 rounded-lg bg-indigo-900/20 border border-indigo-900/50 hover:bg-indigo-900/40 transition-colors text-sm text-indigo-200 flex items-center justify-between group"
-              >
-                <span className="flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
-                  What should I investigate first?
-                </span>
-                <ChevronRight className="h-4 w-4 text-indigo-400 opacity-0 group-hover:opacity-100" />
-              </button>
-            )}
+          {/* Suggested */}
+          <div>
+            <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Suggested Questions</h4>
+            <div className="space-y-2">
+              {SUGGESTED_QUESTIONS.map((item, i) => (
+                <button 
+                  key={i}
+                  onClick={() => handleSend(item.q)}
+                  className="w-full text-left p-3 rounded-lg bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 transition-all text-xs font-medium text-slate-700 flex items-center gap-2.5 group shadow-sm cursor-pointer"
+                >
+                  <span className="text-sm">{item.icon}</span>
+                  <span className="flex-1">{item.q}</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                </button>
+              ))}
+              
+              {selectedDatasetId && (
+                <button 
+                  onClick={() => prioritizeMutation.mutate()}
+                  disabled={prioritizeMutation.isPending}
+                  className="w-full text-left p-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all text-xs font-semibold flex items-center gap-2.5 cursor-pointer shadow-sm mt-3"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  <span className="flex-1">Prioritize cases for me</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Chat Area */}
-        <Card className="lg:col-span-3 bg-[#0A0F1C] border-[#1E293B] flex flex-col h-full overflow-hidden">
+        {/* Right: Chat Area */}
+        <div className="flex-1 bg-white rounded-xl border border-slate-200/80 flex flex-col overflow-hidden shadow-sm">
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4">
-                <div className="h-16 w-16 bg-blue-500/10 rounded-2xl flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-blue-400" />
+              <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-5 py-12">
+                <div className="h-16 w-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center border border-blue-200/60">
+                  <Sparkles className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-200">How can I help you analyze this data?</h3>
-                <p className="text-slate-400 text-sm">
-                  I can summarize reconciliation runs, identify patterns, and recommend next steps based on verified deterministic evidence.
-                </p>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">How can I help?</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Ask natural language questions about reconciliation runs, exception patterns, and financial intelligence.
+                  </p>
+                </div>
+                {/* Inline prompt chips for mobile */}
+                <div className="flex flex-wrap gap-2 justify-center lg:hidden">
+                  {SUGGESTED_QUESTIONS.slice(0, 3).map((item, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => handleSend(item.q)}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-full text-xs font-medium text-slate-600 cursor-pointer transition-colors"
+                    >
+                      {item.icon} {item.q}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               messages.map((m, idx) => (
-                <div key={idx} className={cn("flex gap-4 max-w-3xl", m.role === 'user' ? "ml-auto flex-row-reverse" : "")}>
+                <div key={idx} className={cn("flex gap-3.5 max-w-3xl", m.role === 'user' ? "ml-auto flex-row-reverse" : "")}>
+                  {/* Avatar */}
                   <div className="shrink-0">
                     {m.role === 'user' ? (
-                      <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold text-white">U</div>
+                      <div className="h-8 w-8 rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-white">U</div>
                     ) : (
-                      <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                        <Bot className="h-5 w-5 text-white" />
+                      <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                        <Bot className="h-4 w-4" />
                       </div>
                     )}
                   </div>
                   
-                  <div className={cn("space-y-4", m.role === 'user' ? "text-right" : "")}>
+                  <div className={cn("space-y-3 min-w-0", m.role === 'user' ? "text-right" : "")}>
                     {m.content && (
                       <div className={cn(
-                        "inline-block rounded-2xl px-4 py-2.5 text-sm max-w-full text-left",
-                        m.role === 'user' ? "bg-blue-600 text-white" : "bg-[#1E293B] text-slate-200"
+                        "inline-block rounded-2xl px-4 py-2.5 text-sm font-medium max-w-full text-left",
+                        m.role === 'user' ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-800"
                       )}>
                         {m.content}
                       </div>
                     )}
                     
                     {m.data && (
-                      <div className="bg-[#1E293B]/30 rounded-xl border border-[#1E293B] overflow-hidden text-left">
+                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-left">
                         {m.data.response_mode === 'insufficient_data' ? (
-                          <div className="p-6 bg-slate-900/50">
-                            <h4 className="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2">
-                              <ShieldCheck className="h-5 w-5" />
-                              Not enough verified data yet
-                            </h4>
-                            <p className="text-sm text-slate-300 leading-relaxed">{m.data.answer}</p>
-                            <div className="mt-4 text-xs text-slate-500">
-                              Upload a dataset or select a case to get evidence-based financial analysis.
+                          <div className="p-5 bg-amber-50/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <ShieldCheck className="h-4 w-4 text-amber-600" />
+                              <h4 className="text-xs font-bold text-amber-900">Insufficient Verified Data</h4>
                             </div>
+                            <p className="text-xs text-slate-700 leading-relaxed">{m.data.answer}</p>
+                            <p className="text-[11px] text-slate-500 mt-3">Upload a dataset or select a specific dataset for evidence-based analysis.</p>
                           </div>
                         ) : (
                           <>
                             {/* Verified Facts */}
-                            {m.data.verified_facts.length > 0 && (
-                              <div className="p-4 border-b border-[#1E293B] bg-slate-900/50">
-                                <h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                  <ShieldCheck className="h-4 w-4" />
+                            {m.data.verified_facts && m.data.verified_facts.length > 0 && (
+                              <div className="p-4 border-b border-slate-100 bg-emerald-50/30">
+                                <h4 className="text-[11px] font-bold text-emerald-800 uppercase tracking-widest mb-2.5 flex items-center gap-2">
+                                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                                   Verified Facts
                                 </h4>
-                                <ul className="list-disc list-inside space-y-1">
+                                <ul className="space-y-1.5">
                                   {m.data.verified_facts.map((f, i) => (
-                                    <li key={i} className="text-sm text-slate-300">{f}</li>
+                                    <li key={i} className="text-xs text-slate-700 flex items-start gap-2">
+                                      <span className="text-emerald-500 mt-0.5">✓</span>
+                                      {f}
+                                    </li>
                                   ))}
                                 </ul>
                               </div>
                             )}
                             
                             {/* AI Analysis */}
-                            <div className="p-4 border-b border-[#1E293B]">
-                              <h4 className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                <Sparkles className="h-4 w-4" />
-                                AI Answer
+                            <div className="p-4 border-b border-slate-100">
+                              <h4 className="text-[11px] font-bold text-blue-700 uppercase tracking-widest mb-2.5 flex items-center gap-2">
+                                <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                                AI Analysis
                               </h4>
-                              <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{m.data.answer}</p>
+                              <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">{m.data.answer}</p>
                             </div>
                             
                             {/* Recommendations */}
-                            {m.data.recommendations.length > 0 && (
-                              <div className="p-4 bg-indigo-950/20">
-                                <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                  <Activity className="h-4 w-4" />
-                                  Recommendations
+                            {m.data.recommendations && m.data.recommendations.length > 0 && (
+                              <div className="p-4 bg-indigo-50/20 border-b border-slate-100">
+                                <h4 className="text-[11px] font-bold text-indigo-800 uppercase tracking-widest mb-2.5 flex items-center gap-2">
+                                  <Lightbulb className="h-3.5 w-3.5 text-indigo-600" />
+                                  Recommended Next Steps
                                 </h4>
-                                <ul className="list-disc list-inside space-y-1">
+                                <ul className="space-y-1.5">
                                   {m.data.recommendations.map((r, i) => (
-                                    <li key={i} className="text-sm text-slate-300">{r}</li>
+                                    <li key={i} className="text-xs text-slate-700 flex items-start gap-2">
+                                      <span className="text-indigo-500 mt-0.5">→</span>
+                                      {r}
+                                    </li>
                                   ))}
                                 </ul>
                               </div>
                             )}
                             
-                            <div className="px-4 py-2 bg-slate-950 flex justify-between items-center text-xs">
-                              <span className="text-slate-500 italic">{m.data.disclaimer}</span>
+                            {/* Footer */}
+                            <div className="px-4 py-2.5 bg-slate-50/60 flex justify-between items-center text-[11px]">
+                              <span className="text-slate-400 italic truncate max-w-[60%]">{m.data.disclaimer}</span>
                               <span className={cn(
-                                "px-2 py-0.5 rounded uppercase font-medium tracking-wide flex items-center gap-1",
-                                m.data.confidence >= 0.8 ? "bg-emerald-950 text-emerald-400" :
-                                m.data.confidence >= 0.4 ? "bg-amber-950 text-amber-400" :
-                                "bg-red-950 text-red-400"
+                                "px-2.5 py-1 rounded-full font-bold text-[10px] tracking-wide shrink-0",
+                                m.data.confidence >= 0.8 ? "bg-emerald-100 text-emerald-800" :
+                                m.data.confidence >= 0.4 ? "bg-amber-100 text-amber-800" :
+                                "bg-red-100 text-red-800"
                               )}>
-                                📊 Confidence: {Math.round(m.data.confidence * 100)}%
+                                {Math.round(m.data.confidence * 100)}% Confidence
                               </span>
                             </div>
                           </>
@@ -335,77 +363,78 @@ export default function Copilot() {
               ))
             )}
             {chatMutation.isPending && (
-              <div className="flex gap-4">
-                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
-                  <Bot className="h-5 w-5 text-white" />
+              <div className="flex gap-3.5">
+                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0">
+                  <Bot className="h-4 w-4" />
                 </div>
-                <div className="bg-[#1E293B] rounded-2xl px-4 py-3 flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 text-slate-400 animate-spin" />
-                  <span className="text-sm text-slate-400">Analyzing deterministic data...</span>
+                <div className="bg-slate-100 rounded-2xl px-4 py-3 flex items-center gap-2.5">
+                  <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                  <span className="text-xs text-slate-600 font-medium">Querying verified data...</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
           
-          <div className="p-4 border-t border-[#1E293B] bg-[#05080F]">
+          {/* Input */}
+          <div className="p-4 border-t border-slate-200 bg-slate-50/50">
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
-              className="flex gap-2"
+              className="flex gap-2.5"
             >
               <input 
                 type="text" 
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder="Ask the AI Finance Copilot..."
-                className="flex-1 bg-[#1E293B] border border-slate-700 text-slate-200 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-3 outline-none"
+                placeholder="Ask about reconciliation performance, exceptions, or financial patterns..."
+                className="flex-1 bg-white border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 px-4 py-3 outline-none transition-all shadow-sm"
                 disabled={chatMutation.isPending}
               />
-              <button 
+              <PrimaryButton 
                 type="submit" 
                 disabled={!input.trim() || chatMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 flex items-center justify-center disabled:opacity-50"
+                className="rounded-xl px-5 shadow-sm"
               >
-                <Send className="h-5 w-5" />
-              </button>
+                <Send className="h-4 w-4" />
+              </PrimaryButton>
             </form>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0A0F1C] border border-[#1E293B] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center p-5 border-b border-[#1E293B] bg-slate-900/50">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <UploadCloud className="w-5 h-5 text-blue-400" />
-                Upload Dataset
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col space-y-4 p-6">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <UploadCloud className="w-5 h-5 text-blue-600" />
+                Upload Data Batch
               </h3>
               <button 
                 onClick={() => setIsUploadModalOpen(false)}
-                className="text-slate-500 hover:text-slate-300 transition-colors"
+                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+            <div className="space-y-3">
               <FileSelector label="Ledger" file={ledgerFile} setFile={setLedgerFile} inputRef={ledgerRef} />
               <FileSelector label="Gateway" file={gatewayFile} setFile={setGatewayFile} inputRef={gatewayRef} />
               <FileSelector label="Bank" file={bankFile} setFile={setBankFile} inputRef={bankRef} />
             </div>
-            <div className="p-5 border-t border-[#1E293B] bg-slate-900/50">
-              <button
+            <div className="pt-2">
+              <PrimaryButton
                 onClick={handleUpload}
                 disabled={uploadMutation.isPending || !ledgerFile || !gatewayFile || !bankFile}
-                className="w-full cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-bold transition-all bg-blue-600 text-white hover:bg-blue-500 h-11 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                className="w-full py-2.5"
               >
                 {uploadMutation.isPending ? (
-                  <><Activity className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
+                  <><Activity className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
                 ) : (
-                  <><Play className="mr-2 h-4 w-4" /> Run Reconciliation & Upload</>
+                  <><Play className="mr-2 h-4 w-4" /> Run Reconciliation & Select</>
                 )}
-              </button>
+              </PrimaryButton>
             </div>
           </div>
         </div>

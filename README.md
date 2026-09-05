@@ -270,7 +270,23 @@ Conversational assistant providing instant answers grounded exclusively in verif
 - **Python**: 3.9, 3.10, 3.11, 3.12, or 3.14
 - **Node.js**: 18+ and `npm`
 
-### 1. Backend Setup
+### ⚡ One-Command Instant Launch (Recommended)
+
+You can launch both the FastAPI backend and Vite frontend simultaneously with a single command:
+
+```bash
+python run.py
+# Or on Windows:
+.\start.bat
+```
+
+- **Frontend Command Center**: [http://localhost:5173](http://localhost:5173)
+- **Backend API & Swagger**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Direct App via Backend**: [http://localhost:8000](http://localhost:8000)
+
+---
+
+### 1. Manual Backend Setup
 
 ```bash
 # Clone the repository
